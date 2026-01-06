@@ -4,7 +4,7 @@ import { DollarSign, Briefcase } from 'lucide-react';
 import { ProjectList } from '@/components/admin/project-list';
 import { CreateProjectModal } from '@/components/admin/create-project-modal';
 import { useCollection } from '@/firebase';
-import { collection, query, getDocs } from 'firebase/firestore';
+import { collection, query, getDocs, collectionGroup } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useEffect, useState, useMemo } from 'react';
 import type { Project, Transaction } from '@/types/schema';
@@ -12,23 +12,20 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 function AdminStats() {
   const firestore = useFirestore();
-  const { data: projects, isLoading: projectsLoading } = useCollection<Project>(
-    useMemo(() => collection(firestore, 'projects'), [firestore])
-  );
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [totalIncome, setTotalIncome] = useState(0);
   const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
-    if (!projects) return;
-
     const fetchTransactions = async () => {
+      if (!firestore) return;
       setStatsLoading(true);
       let expenses = 0;
       let income = 0;
-
-      for (const project of projects) {
-        const transactionsQuery = query(collection(firestore, `projects/${project.id}/transactions`));
+      
+      const transactionsQuery = query(collectionGroup(firestore, 'transactions'));
+      
+      try {
         const transactionsSnapshot = await getDocs(transactionsQuery);
         transactionsSnapshot.forEach((doc) => {
           const transaction = doc.data() as Transaction;
@@ -38,16 +35,18 @@ function AdminStats() {
             income += transaction.amount;
           }
         });
+        setTotalExpenses(expenses);
+        setTotalIncome(income);
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+      } finally {
+        setStatsLoading(false);
       }
-      setTotalExpenses(expenses);
-      setTotalIncome(income);
-      setStatsLoading(false);
     };
 
     fetchTransactions();
-  }, [projects, firestore]);
+  }, [firestore]);
   
-  const isLoading = projectsLoading || statsLoading;
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -57,7 +56,7 @@ function AdminStats() {
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {statsLoading ? (
             <Skeleton className="h-8 w-3/4" />
           ) : (
             <div className="text-2xl font-bold">
@@ -72,7 +71,7 @@ function AdminStats() {
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {statsLoading ? (
             <Skeleton className="h-8 w-3/4" />
           ) : (
             <div className="text-2xl font-bold">
