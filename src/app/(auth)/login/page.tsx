@@ -80,6 +80,8 @@ export default function LoginPage() {
         }).catch(() => {
           // In case of error, default to manager dashboard
           router.replace('/dashboard');
+        }).finally(() => {
+          setIsCheckingRole(false);
         });
       } else {
         // No user, stop checking
@@ -91,7 +93,7 @@ export default function LoginPage() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      await signInWithEmailAndPassword(auth, values.email, values.password);
       // Let the useEffect handle redirection
     } catch (error) {
       if (error instanceof FirebaseError && error.code === 'auth/user-not-found') {
@@ -102,7 +104,7 @@ export default function LoginPage() {
 
           // Create a user document in Firestore
           const userDocRef = doc(firestore, 'users', newUser.uid);
-          const newUserData: User = {
+          const newUserData: Omit<User, 'id'> = {
             uid: newUser.uid,
             email: newUser.email!,
             name: newUser.email!.split('@')[0],
@@ -135,7 +137,7 @@ export default function LoginPage() {
     }
   };
   
-  if (isUserLoading || isCheckingRole || user) {
+  if (isUserLoading || isCheckingRole) {
      return (
        <div className="flex items-center justify-center min-h-screen">
           <div className="w-full max-w-md space-y-4 p-4">
@@ -162,6 +164,11 @@ export default function LoginPage() {
           </div>
        </div>
      );
+  }
+
+  // If user is logged in, useEffect will handle redirect. If not, show the form.
+  if (user) {
+    return null; // Or a loading indicator while redirecting
   }
 
   return (
