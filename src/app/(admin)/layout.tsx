@@ -32,6 +32,7 @@ import { ProtectedRoute } from '@/components/protected-route';
 
 const adminMenuItems = [
   { href: '/admin/dashboard', label: 'Admin Dashboard', icon: Shield },
+  { href: '/admin/workers', label: 'Workers & Payroll', icon: Users },
   // Add other admin-specific links here
 ];
 
@@ -74,7 +75,7 @@ export default function AdminLayout({
                 <SidebarMenuItem key={href}>
                   <Link href={href}>
                     <SidebarMenuButton
-                      isActive={pathname === href}
+                      isActive={pathname.startsWith(href)}
                       tooltip={label}
                     >
                       <Icon />
