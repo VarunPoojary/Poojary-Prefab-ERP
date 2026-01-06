@@ -33,6 +33,7 @@ import type { User } from '@/types/schema';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const formSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
   email: z.string().email({
     message: 'Please enter a valid email address.',
   }),
@@ -47,44 +48,39 @@ export default function SignupPage() {
   const { toast } = useToast();
   const router = useRouter();
   const { user, isUserLoading } = useUser();
-  const [isCheckingUser, setIsCheckingUser] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      name: '',
       email: '',
       password: '',
     },
   });
 
    useEffect(() => {
-    if (isUserLoading) {
-      return; 
-    }
-    if (user) {
+    if (!isUserLoading && user) {
       // If user is already logged in, redirect them.
       router.replace('/dashboard');
-    } else {
-      setIsCheckingUser(false);
     }
   }, [user, isUserLoading, router]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
     try {
       const newUserCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const newUser = newUserCredential.user;
 
       const userDocRef = doc(firestore, 'users', newUser.uid);
-      // We are omitting `id` because it's the document ID, not a field.
-      const newUserData: Omit<User, 'id'> = {
-        uid: newUser.uid,
+      const newUserData: Omit<User, 'uid'> = {
+        name: values.name,
         email: newUser.email!,
-        name: newUser.email!.split('@')[0], // Default name from email
         role: 'manager', // Default role
         assigned_project_ids: [],
       };
       
-      await setDoc(userDocRef, newUserData);
+      await setDoc(userDocRef, {uid: newUser.uid, ...newUserData});
 
       toast({
         title: 'Account Created',
@@ -105,10 +101,12 @@ export default function SignupPage() {
           description: 'Please try again.',
         });
       }
+    } finally {
+        setIsSubmitting(false);
     }
   };
   
-  if (isCheckingUser) {
+  if (isUserLoading || user) {
      return (
        <div className="flex items-center justify-center min-h-screen">
           <div className="w-full max-w-md space-y-4 p-4">
@@ -121,6 +119,10 @@ export default function SignupPage() {
                    <Skeleton className="h-4 w-1/2 mx-auto" />
                 </CardHeader>
                 <CardContent className="space-y-4">
+                   <div className="space-y-2">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
                   <div className="space-y-2">
                     <Skeleton className="h-4 w-16" />
                     <Skeleton className="h-10 w-full" />
@@ -148,7 +150,7 @@ export default function SignupPage() {
             Create an Account
           </CardTitle>
           <CardDescription>
-            Enter your email and password to get started.
+            Enter your details below to get started.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -156,12 +158,25 @@ export default function SignupPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John Doe" {...field} disabled={isSubmitting} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="manager@example.com" {...field} />
+                      <Input placeholder="manager@example.com" {...field} disabled={isSubmitting} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -174,14 +189,14 @@ export default function SignupPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input type="password" {...field} disabled={isSubmitting} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                Create Account
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? 'Creating Account...' : 'Create Account'}
               </Button>
             </form>
           </Form>
