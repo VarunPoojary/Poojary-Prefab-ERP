@@ -63,7 +63,7 @@ export default function ProjectsPage() {
   const { user } = useUser();
 
   const projectsQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !firestore) return null;
     // This is the crucial fix: we are now using a 'where' clause to filter by the manager's UID.
     // This ensures we only request data the manager is allowed to see.
     return query(collection(firestore, 'projects'), where('assigned_manager_id', '==', user.uid));
