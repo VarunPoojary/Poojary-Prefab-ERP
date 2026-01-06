@@ -1,35 +1,5 @@
-/**
- * Core Philosophy: This ruleset enforces a strict Role-Based Access Control (RBAC) model.
- * There are two primary roles: 'admin' and 'manager'. Admins have global read/write
- * access to all data, providing oversight and management capabilities. Managers have
- * scoped access, limited to the specific projects they are assigned to. Regular users
- * can only manage their own user profile. The default security posture is to deny all
- * access unless explicitly granted.
- *
- * Data Structure:
- * - /users/{userId}: Stores user profiles, including their role.
- * - /projects/{projectId}: Top-level collection for projects. Each project document
- *   contains an 'assignedManagerId' field to link it to a manager.
- * - /projects/{projectId}/*: Subcollections for project-specific data like
- *   transactions, tasks, and attendance. Access to these is inherited from the
- *   parent project's ownership.
- * - /workers/{workerId}: A collection for worker profiles, managed exclusively by admins.
- * - /roles_admin/{userId}: A dedicated collection used for efficient, high-performance
- *   admin role checks. A user is an admin if a document with their UID exists here.
- *
- * Key Security Decisions:
- * - Admin Privilege: Admin status is determined by the existence of a document in the
- *   `/roles_admin` collection. This is a highly performant and secure pattern for
- *   checking global roles.
- * - Manager Scope: A manager's access is strictly tied to the `assignedManagerId`
- *   field on a project document. They cannot see or modify projects they do not manage.
- * - User Data Privacy: Users can only read and write their own document in the `/users`
- *   collection. Listing all users is forbidden for non-admins.
- * - Client-Side Writes to Roles: To prevent privilege escalation, the `/roles_admin`
- *   collection is read-only from the client. Role assignments must be handled by a
- *   trusted server-side process.
- */
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -37,134 +7,99 @@ service cloud.firestore {
     // Helper Functions
     // -------------------------------------------------------------------------
 
-    /**
-     * Returns true if the user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Returns true if the authenticated user's UID matches the provided userId.
-     * Used to verify resource ownership.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-    
-    /**
-     * Returns true if the document being accessed already exists.
-     * CRITICAL for safe update and delete operations.
-     */
-    function isExistingDoc() {
-      return resource != null;
+
+    function getUserRole(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data.role;
     }
 
-    /**
-     * Checks for admin privileges by verifying the existence of a document
-     * in the dedicated roles_admin collection. This is a highly performant
-     * way to check for a global role.
-     */
     function isAdmin() {
-      // In a real app, this might be a custom claim, but for simplicity we'll check a field in the user's doc.
-      // NOTE: This requires a read to the user's own doc, which is usually fine.
-      // For higher security/performance, use custom claims or a separate roles collection.
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return isSignedIn() && getUserRole(request.auth.uid) == 'admin';
     }
 
-    /**
-     * Checks if the current user is assigned as the manager for a specific project.
-     * This requires reading the parent project document.
-     */
-    function isAssignedManager(projectId) {
-      let project = get(/databases/$(database)/documents/projects/$(projectId));
-      return isSignedIn() && project.data.assigned_manager_id == request.auth.uid;
-    }
-
-    /**
-     * Validates that the projectId in a subcollection document's body matches
-     * the projectId from the document's path.
-     */
-    function isProjectIdConsistent(projectId) {
-      return request.resource.data.project_id == projectId;
+    function isManager() {
+      return isSignedIn() && getUserRole(request.auth.uid) == 'manager';
     }
     
-    /**
-     * Enforces immutability of the projectId field on update to maintain
-     * relational integrity.
-     */
-    function isProjectIdImmutable() {
-      return request.resource.data.project_id == resource.data.project_id;
+    function isAssignedManager(projectId) {
+      let projectData = get(/databases/$(database)/documents/projects/$(projectId)).data;
+      return projectData.assigned_manager_id == request.auth.uid;
     }
-
+    
     // -------------------------------------------------------------------------
     // Collection Rules
     // -------------------------------------------------------------------------
 
-    /**
-     * @description Manages user profiles. Users can create their own profile and read/update it.
-     *              The 'role' field is immutable for non-admins to prevent privilege escalation.
-     *              Admins have full read/write access.
-     */
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
+      // Admins can read all user docs. Users can read their own.
+      allow get: if isAdmin() || isOwner(userId);
       allow list: if isAdmin();
-      allow create: if isOwner(userId);
+      
+      // Users can create their own doc. Role must be 'manager' by default.
+      allow create: if isOwner(userId) && request.resource.data.role == 'manager';
+
+      // Users can update their own doc, but cannot change their role. Admins can change anything.
       allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role) || isAdmin();
+      
       allow delete: if isAdmin();
     }
 
-    /**
-     * @description Manages projects. Admins have full access. Managers can read projects
-     *              they are assigned to. Only Admins can create, update, or delete projects.
-     */
     match /projects/{projectId} {
-      allow get: if isAdmin() || isAssignedManager(projectId);
-      allow list: if isAdmin() || (isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.assigned_project_ids);
-      allow create, update, delete: if isAdmin();
-    }
-
-    /**
-     * @description Stores transactions. Access is inherited from the parent project.
-     *              Assigned managers can create transactions. Only admins can delete.
-     */
-    match /projects/{projectId}/transactions/{transactionId} {
-      allow get, list: if isAdmin() || isAssignedManager(projectId);
-      allow create: if (isAdmin() || isAssignedManager(projectId)) && isProjectIdConsistent(projectId);
-      allow update: if isAdmin(); // Managers cannot edit transactions
-      allow delete: if isAdmin();
-    }
-
-    /**
-     * @description Stores tasks. Access is inherited from the parent project.
-     *              Assigned managers can create and update tasks. Only admins can delete.
-     */
-    match /projects/{projectId}/tasks/{taskId} {
-      allow get, list: if isAdmin() || isAssignedManager(projectId);
-      allow create: if (isAdmin() || isAssignedManager(projectId)) && isProjectIdConsistent(projectId);
-      allow update: if (isAdmin() || isAssignedManager(projectId)) && isProjectIdImmutable();
-      allow delete: if isAdmin();
-    }
-
-    /**
-     * @description Stores attendance. A composite key on worker_id and date must be
-     *              enforced by the application logic, but rules secure access.
-     *              Managers can create attendance records for their projects.
-     */
-    match /attendance/{attendanceId} {
-        allow get, list: if isAdmin() || isAssignedManager(resource.data.project_id);
-        allow create: if (isAdmin() || isAssignedManager(request.resource.data.project_id));
-        allow update, delete: if isAdmin();
+      // Admins can read all projects. Managers can only read projects they are assigned to.
+      allow get: if isAdmin() || (isManager() && isAssignedManager(projectId));
+      allow list: if isAdmin() || (isManager() && request.auth.uid in resource.data.assigned_project_ids);
+      
+      // Only admins can create, update, or delete projects.
+      allow write: if isAdmin();
     }
     
-    /**
-     * @description Manages worker profiles. This data is global.
-     *              Only administrators can create, update, or delete workers.
-     *              Managers can read the list of workers to mark attendance.
-     */
     match /workers/{workerId} {
-      allow get, list: if isSignedIn(); // Allow all signed-in users to read worker data
-      allow create, update, delete: if isAdmin();
+        // Admins and managers can read worker data.
+        allow read: if isAdmin() || isManager();
+        // Only Admins can create, update, or delete workers.
+        allow write: if isAdmin();
+    }
+    
+    match /attendance/{attendanceId} {
+        // Admins can read all records. Managers can read records for their assigned projects.
+        allow read: if isAdmin() || (isManager() && isAssignedManager(resource.data.project_id));
+        
+        // Managers can create attendance records for their projects.
+        // Critical: The rule to prevent duplicate records for a worker on the same date needs to be handled
+        // via a Firestore transaction in the application code, as security rules cannot query across documents.
+        allow create: if isManager() && isAssignedManager(request.resource.data.project_id);
+
+        // Only admins can update or delete records.
+        allow update, delete: if isAdmin();
+    }
+
+    match /projects/{projectId}/transactions/{transactionId} {
+      // Admins can read all transactions. Managers can read transactions for their projects.
+      allow read: if isAdmin() || (isManager() && isAssignedManager(projectId));
+      
+      // Managers can create transactions for their projects.
+      allow create: if isManager() && isAssignedManager(projectId);
+      
+      // Only admins can delete transactions. Updates are not allowed.
+      allow update: if false; 
+      allow delete: if isAdmin();
+    }
+
+    match /projects/{projectId}/tasks/{taskId} {
+      // Admins can read all tasks. Managers can read tasks for their projects.
+      allow read: if isAdmin() || (isManager() && isAssignedManager(projectId));
+      
+      // Managers can create and update tasks (e.g., mark as complete).
+      allow create, update: if isManager() && isAssignedManager(projectId);
+      
+      // Only admins can delete tasks.
+      allow delete: if isAdmin();
     }
   }
 }
