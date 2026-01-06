@@ -28,14 +28,6 @@
  * - Client-Side Writes to Roles: To prevent privilege escalation, the `/roles_admin`
  *   collection is read-only from the client. Role assignments must be handled by a
  *   trusted server-side process.
- *
- * Denormalization for Authorization:
- * - Project Ownership: The `assignedManagerId` is denormalized onto each `/projects/{projectId}`
- *   document. This avoids a costly `get()` to a user profile and allows for a direct,
- *   performant check for project access.
- * - Admin Role Cache: The `/roles_admin` collection acts as a denormalized, fast-lookup
- *   cache for determining admin status, avoiding reads to the main `/users` collection
- *   for this critical and frequent check.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -74,16 +66,19 @@ service cloud.firestore {
      * way to check for a global role.
      */
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      // In a real app, this might be a custom claim, but for simplicity we'll check a field in the user's doc.
+      // NOTE: This requires a read to the user's own doc, which is usually fine.
+      // For higher security/performance, use custom claims or a separate roles collection.
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     /**
      * Checks if the current user is assigned as the manager for a specific project.
      * This requires reading the parent project document.
      */
-    function isAssignedManagerToProject(projectId) {
+    function isAssignedManager(projectId) {
       let project = get(/databases/$(database)/documents/projects/$(projectId));
-      return isSignedIn() && project.data.assignedManagerId == request.auth.uid;
+      return isSignedIn() && project.data.assigned_manager_id == request.auth.uid;
     }
 
     /**
@@ -91,7 +86,7 @@ service cloud.firestore {
      * the projectId from the document's path.
      */
     function isProjectIdConsistent(projectId) {
-      return request.resource.data.projectId == projectId;
+      return request.resource.data.project_id == projectId;
     }
     
     /**
@@ -99,7 +94,7 @@ service cloud.firestore {
      * relational integrity.
      */
     function isProjectIdImmutable() {
-      return request.resource.data.projectId == resource.data.projectId;
+      return request.resource.data.project_id == resource.data.project_id;
     }
 
     // -------------------------------------------------------------------------
@@ -107,114 +102,69 @@ service cloud.firestore {
     // -------------------------------------------------------------------------
 
     /**
-     * @description Manages user profiles. Users can create, read, and update their
-     *              own profile. Admins have full read/write access to all user profiles.
-     * @path /users/{userId}
-     * @allow (create) An authenticated user creates their own user document: `users/{auth.uid}`.
-     * @deny  (create) An authenticated user tries to create a document for another user.
-     * @principle Restricts access to a user's own data tree and provides admin oversight.
+     * @description Manages user profiles. Users can create their own profile and read/update it.
+     *              The 'role' field is immutable for non-admins to prevent privilege escalation.
+     *              Admins have full read/write access.
      */
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
-      allow create: if isOwner(userId) && request.resource.data.uid == userId;
-      allow update: if (isOwner(userId) || isAdmin()) && isExistingDoc() && request.resource.data.uid == resource.data.uid;
-      allow delete: if isAdmin() && isExistingDoc();
+      allow create: if isOwner(userId);
+      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role) || isAdmin();
+      allow delete: if isAdmin();
     }
 
     /**
-     * @description Manages projects. Admins have full access. Managers can read, update,
-     *              and create projects, but their access is scoped to projects they are
-     *              assigned to via the `assignedManagerId` field.
-     * @path /projects/{projectId}
-     * @allow (get) A user whose UID matches `resource.data.assignedManagerId` reads a project.
-     * @deny  (list) A non-admin user attempts to list all projects.
-     * @principle Enforces document ownership for writes and reads, with admin override.
+     * @description Manages projects. Admins have full access. Managers can read projects
+     *              they are assigned to. Only Admins can create, update, or delete projects.
      */
     match /projects/{projectId} {
-      allow get: if isAdmin() || (isExistingDoc() && resource.data.assignedManagerId == request.auth.uid);
-      allow list: if isAdmin();
-      allow create: if isAdmin() || (isSignedIn() && request.resource.data.assignedManagerId == request.auth.uid);
-      allow update: if (isAdmin() || (isExistingDoc() && resource.data.assignedManagerId == request.auth.uid && request.resource.data.assignedManagerId == resource.data.assignedManagerId));
-      allow delete: if isAdmin() && isExistingDoc();
+      allow get: if isAdmin() || isAssignedManager(projectId);
+      allow list: if isAdmin() || (isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.assigned_project_ids);
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Stores transactions for a project. Access is inherited from the parent
-     *              project. Only the assigned manager or an admin can manage transactions.
-     * @path /projects/{projectId}/transactions/{transactionId}
-     * @allow (create) An assigned project manager creates a new transaction for their project.
-     * @deny  (update) A manager from a different project tries to update a transaction.
-     * @principle Secures a subcollection based on the parent document's ownership data.
+     * @description Stores transactions. Access is inherited from the parent project.
+     *              Assigned managers can create transactions. Only admins can delete.
      */
     match /projects/{projectId}/transactions/{transactionId} {
-      allow get, list: if isAdmin() || isAssignedManagerToProject(projectId);
-      allow create: if (isAdmin() || isAssignedManagerToProject(projectId)) && isProjectIdConsistent(projectId);
-      allow update: if (isAdmin() || isAssignedManagerToProject(projectId)) && isExistingDoc() && isProjectIdImmutable();
-      allow delete: if (isAdmin() || isAssignedManagerToProject(projectId)) && isExistingDoc();
+      allow get, list: if isAdmin() || isAssignedManager(projectId);
+      allow create: if (isAdmin() || isAssignedManager(projectId)) && isProjectIdConsistent(projectId);
+      allow update: if isAdmin(); // Managers cannot edit transactions
+      allow delete: if isAdmin();
     }
 
     /**
-     * @description Stores tasks for a project. Access is inherited from the parent
-     *              project. Only the assigned manager or an admin can manage tasks.
-     * @path /projects/{projectId}/tasks/{taskId}
-     * @allow (create) An admin creates a new task for any project.
-     * @deny  (get) A user who is not the project manager or an admin tries to read a task.
-     * @principle Secures a subcollection based on the parent document's ownership data.
+     * @description Stores tasks. Access is inherited from the parent project.
+     *              Assigned managers can create and update tasks. Only admins can delete.
      */
     match /projects/{projectId}/tasks/{taskId} {
-      allow get, list: if isAdmin() || isAssignedManagerToProject(projectId);
-      allow create: if (isAdmin() || isAssignedManagerToProject(projectId)) && isProjectIdConsistent(projectId);
-      allow update: if (isAdmin() || isAssignedManagerToProject(projectId)) && isExistingDoc() && isProjectIdImmutable();
-      allow delete: if (isAdmin() || isAssignedManagerToProject(projectId)) && isExistingDoc();
-    }
-    
-    /**
-     * @description Stores attendance records for a project. Access is inherited from the parent
-     *              project. Only the assigned manager or an admin can manage attendance.
-     * @path /projects/{projectId}/attendance/{attendanceId}
-     * @allow (list) The assigned project manager lists all attendance records for their project.
-     * @deny  (delete) A manager from a different project tries to delete an attendance record.
-     * @principle Secures a subcollection based on the parent document's ownership data.
-     */
-    match /projects/{projectId}/attendance/{attendanceId} {
-      allow get, list: if isAdmin() || isAssignedManagerToProject(projectId);
-      allow create: if (isAdmin() || isAssignedManagerToProject(projectId)) && isProjectIdConsistent(projectId);
-      allow update: if (isAdmin() || isAssignedManagerToProject(projectId)) && isExistingDoc() && isProjectIdImmutable();
-      allow delete: if (isAdmin() || isAssignedManagerToProject(projectId)) && isExistingDoc();
+      allow get, list: if isAdmin() || isAssignedManager(projectId);
+      allow create: if (isAdmin() || isAssignedManager(projectId)) && isProjectIdConsistent(projectId);
+      allow update: if (isAdmin() || isAssignedManager(projectId)) && isProjectIdImmutable();
+      allow delete: if isAdmin();
     }
 
     /**
-     * @description Manages worker profiles. This data is considered sensitive and is
-     *              only accessible by administrators.
-     * @path /workers/{workerId}
-     * @allow (create) An admin creates a new worker profile.
-     * @deny  (get) Any non-admin user attempts to read a worker's profile.
-     * @principle Enforces strict admin-only access for sensitive data collections.
+     * @description Stores attendance. A composite key on worker_id and date must be
+     *              enforced by the application logic, but rules secure access.
+     *              Managers can create attendance records for their projects.
      */
-    match /workers/{workerId} {
-      allow get: if isAdmin();
-      allow list: if isAdmin();
-      allow create: if isAdmin();
-      allow update: if isAdmin() && isExistingDoc();
-      allow delete: if isAdmin() && isExistingDoc();
+    match /attendance/{attendanceId} {
+        allow get, list: if isAdmin() || isAssignedManager(resource.data.project_id);
+        allow create: if (isAdmin() || isAssignedManager(request.resource.data.project_id));
+        allow update, delete: if isAdmin();
     }
     
     /**
-     * @description A private, read-only collection for client-side admin checks. The existence
-     *              of a document here grants admin privileges. Writes are disabled from the
-     *              client to prevent privilege escalation.
-     * @path /roles_admin/{userId}
-     * @allow (get) An admin checks if another user is also an admin.
-     * @deny  (create) Any user (including an admin) tries to make another user an admin via the client SDK.
-     * @principle Prevents client-side privilege escalation for critical role data.
+     * @description Manages worker profiles. This data is global.
+     *              Only administrators can create, update, or delete workers.
+     *              Managers can read the list of workers to mark attendance.
      */
-    match /roles_admin/{userId} {
-      allow get: if isAdmin();
-      allow list: if isAdmin();
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+    match /workers/{workerId} {
+      allow get, list: if isSignedIn(); // Allow all signed-in users to read worker data
+      allow create, update, delete: if isAdmin();
     }
   }
 }

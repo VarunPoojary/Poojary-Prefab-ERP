@@ -21,8 +21,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     }
 
     if (!user) {
-      // If no user, not authorized, redirect to login
-      setIsAuthorized(false);
+      // If no user, not authorized, redirect to login, unless we are already there
       setIsLoading(false);
       if (pathname !== '/login') {
          router.replace('/login');
@@ -46,6 +45,13 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         } else if (pathname.startsWith('/dashboard') || pathname === '/') {
           // All authenticated users can access general dashboard routes
           authorized = true;
+        } else if (pathname === '/login' && user) {
+          // If user is logged in and on login page, redirect them
+           if (userData.role === 'admin') {
+              router.replace('/admin/dashboard');
+            } else {
+              router.replace('/dashboard');
+            }
         }
       } else {
          // User doc doesn't exist, they can't access protected routes
@@ -63,7 +69,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   }, [isUserLoading, user, firestore, router, pathname]);
 
-  if (isLoading) {
+  if (isLoading || isUserLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="flex flex-col items-center gap-4">
@@ -77,10 +83,14 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
   
-  if (!isAuthorized && pathname !== '/login') {
-    // This is a fallback, the useEffect should have already redirected.
-    return null;
+  if (isAuthorized) {
+    return <>{children}</>;
   }
 
-  return <>{children}</>;
+  // Fallback for unauthorized and not loading, mostly for routes like /login when user is not logged in.
+  if(pathname === '/login' && !user) {
+    return <>{children}</>;
+  }
+
+  return null;
 }

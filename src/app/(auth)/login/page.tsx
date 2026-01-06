@@ -104,7 +104,7 @@ export default function LoginPage() {
 
           // Create a user document in Firestore
           const userDocRef = doc(firestore, 'users', newUser.uid);
-          const newUserData: Omit<User, 'id'> = {
+          const newUserData: User = {
             uid: newUser.uid,
             email: newUser.email!,
             name: newUser.email!.split('@')[0],
@@ -168,7 +168,34 @@ export default function LoginPage() {
 
   // If user is logged in, useEffect will handle redirect. If not, show the form.
   if (user) {
-    return null; // Or a loading indicator while redirecting
+    // Render a loading state or nothing while the redirect is in progress.
+    // The useEffect above will perform the redirect.
+    return (
+       <div className="flex items-center justify-center min-h-screen">
+          <div className="w-full max-w-md space-y-4 p-4">
+            <Card>
+                <CardHeader className="space-y-1 text-center">
+                  <div className="flex justify-center mb-4">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                  </div>
+                   <Skeleton className="h-6 w-3/4 mx-auto" />
+                   <Skeleton className="h-4 w-1/2 mx-auto" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <Skeleton className="h-10 w-full" />
+                </CardContent>
+            </Card>
+          </div>
+       </div>
+    );
   }
 
   return (
