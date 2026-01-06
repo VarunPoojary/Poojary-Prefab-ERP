@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useCollection, useMemoFirebase } from '@/firebase';
-import { collectionGroup, query, doc, deleteDoc, collection } from 'firebase/firestore';
+import { collection, query, doc, deleteDoc, getDocs } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Transaction, Project } from '@/types/schema';
 import {
@@ -31,29 +31,57 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
-function ProjectName({ projectId }: { projectId: string }) {
-  const firestore = useFirestore();
-  // Fetch all projects to find the name from the ID.
-  const projectsQuery = useMemoFirebase(() => query(collection(firestore, 'projects')), [firestore]);
-  const { data: projects, isLoading } = useCollection<Project>(projectsQuery);
-
-  if (isLoading) return <Skeleton className="h-5 w-24" />;
-
-  const project = projects?.find(p => p.id === projectId);
-  return <span>{project?.name || 'Unknown Project'}</span>;
-}
-
-
 export function TransactionList() {
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  const transactionsQuery = useMemoFirebase(() => query(collectionGroup(firestore, 'transactions')), [firestore]);
-  const {
-    data: transactions,
-    isLoading,
-    error,
-  } = useCollection<Transaction>(transactionsQuery);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const projectsQuery = useMemoFirebase(() => query(collection(firestore, 'projects')), [firestore]);
+  const { data: projectData, isLoading: projectsLoading, error: projectsError } = useCollection<Project>(projectsQuery);
+
+  useEffect(() => {
+    if (projectsLoading) {
+      setIsLoading(true);
+      return;
+    }
+    if (projectsError) {
+      setError(projectsError);
+      setIsLoading(false);
+      return;
+    }
+    if (projectData) {
+      setProjects(projectData);
+      const fetchTransactions = async () => {
+        setIsLoading(true);
+        try {
+          const allTransactions: Transaction[] = [];
+          for (const project of projectData) {
+            const transactionsColRef = collection(firestore, `projects/${project.id}/transactions`);
+            const transactionSnapshot = await getDocs(transactionsColRef);
+            transactionSnapshot.forEach(doc => {
+              allTransactions.push({ id: doc.id, ...doc.data() } as Transaction);
+            });
+          }
+          // Sort transactions by timestamp, newest first
+          allTransactions.sort((a, b) => {
+             const dateA = a.timestamp && (a.timestamp as any).toDate ? (a.timestamp as any).toDate() : new Date(a.timestamp as string);
+             const dateB = b.timestamp && (b.timestamp as any).toDate ? (b.timestamp as any).toDate() : new Date(b.timestamp as string);
+             return dateB.getTime() - dateA.getTime();
+          });
+          setTransactions(allTransactions);
+        } catch (e) {
+          setError(e as Error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchTransactions();
+    }
+  }, [projectData, projectsLoading, projectsError, firestore]);
 
   const handleDelete = async (transaction: Transaction) => {
     if (!transaction.project_id) {
@@ -63,11 +91,17 @@ export function TransactionList() {
     const transactionRef = doc(firestore, `projects/${transaction.project_id}/transactions`, transaction.id);
     try {
         await deleteDoc(transactionRef);
+        setTransactions(prev => prev.filter(t => t.id !== transaction.id));
         toast({ title: 'Success', description: 'Transaction deleted successfully.' });
     } catch (e) {
         console.error("Error deleting transaction:", e);
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete transaction.' });
     }
+  }
+  
+  const getProjectName = (projectId: string) => {
+      const project = projects.find(p => p.id === projectId);
+      return project?.name || 'Unknown Project';
   }
 
   if (isLoading) {
@@ -96,7 +130,6 @@ export function TransactionList() {
 
   const formatDate = (timestamp: any) => {
     if (!timestamp) return 'N/A';
-    // Firestore Timestamps can be either native Date objects or Firestore Timestamp objects.
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return format(date, 'MMM d, yyyy');
   };
@@ -124,7 +157,7 @@ export function TransactionList() {
                         </TableCell>
                         <TableCell className="font-medium">${transaction.amount.toLocaleString()}</TableCell>
                         <TableCell>{transaction.category}</TableCell>
-                        <TableCell><ProjectName projectId={transaction.project_id} /></TableCell>
+                        <TableCell>{getProjectName(transaction.project_id)}</TableCell>
                         <TableCell>{formatDate(transaction.timestamp)}</TableCell>
                         <TableCell className="text-right">
                            <AlertDialog>
