@@ -15,39 +15,42 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [isAuthorized, setIsAuthorized] = useState(false);
   
   useEffect(() => {
+    // Wait until the authentication state is fully determined.
     if (isUserLoading) {
-      return; // Wait until user state is definitively loaded
+      return;
     }
 
+    // If auth state is determined and there's no user, redirect to login.
     if (!user) {
-      // If no user, redirect to login. The auth pages are not wrapped in this component.
       router.replace('/login');
       return;
     }
 
-    // User is authenticated, now check role for authorization
+    // At this point, the user is authenticated. Now, we check authorization.
     const userDocRef = doc(firestore, 'users', user.uid);
     getDoc(userDocRef).then((docSnap) => {
       if (docSnap.exists()) {
         const userData = docSnap.data() as User;
+        // If a manager tries to access an admin-only route, redirect them.
         if (pathname.startsWith('/admin') && userData.role !== 'admin') {
-          // Manager trying to access admin route, redirect them
           router.replace('/dashboard');
         } else {
-          // User is authorized for this route.
+          // The user's role is permitted for this route.
           setIsAuthorized(true);
         }
       } else {
-         // User doc doesn't exist, they can't access protected routes.
+         // This case is unlikely if signup is handled correctly, but as a fallback,
+         // if the user doc doesn't exist, they can't access protected routes.
          router.replace('/login');
       }
     }).catch(() => {
-        // Error fetching doc, treat as unauthorized and send to login.
+        // If there's an error fetching the user's role, they are not authorized.
         router.replace('/login');
     });
 
   }, [isUserLoading, user, firestore, router, pathname]);
 
+  // While checking auth or if the user is not yet authorized, show a loading state.
   if (isUserLoading || !isAuthorized) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -62,6 +65,6 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // If we've reached this point, user is loaded and authorized.
+  // If we've reached this point, the user is loaded, authenticated, and authorized.
   return <>{children}</>;
 }

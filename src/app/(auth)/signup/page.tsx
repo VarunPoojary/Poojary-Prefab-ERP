@@ -60,8 +60,9 @@ export default function SignupPage() {
   });
 
    useEffect(() => {
+    // This effect handles redirection for already logged-in users.
+    // It waits until the auth state is confirmed before acting.
     if (!isUserLoading && user) {
-      // If user is already logged in, redirect them.
       router.replace('/dashboard');
     }
   }, [user, isUserLoading, router]);
@@ -73,11 +74,10 @@ export default function SignupPage() {
       const newUser = newUserCredential.user;
 
       const userDocRef = doc(firestore, 'users', newUser.uid);
-      // Ensure assigned_project_ids is included, even if empty
-      const newUserData: Omit<User, 'uid' | 'id'> = {
+      const newUserData: Omit<User, 'uid' > = {
         name: values.name,
         email: newUser.email!,
-        role: 'manager', // Default role
+        role: 'manager', // Default role for all new signups
         assigned_project_ids: [],
       };
       
@@ -88,7 +88,7 @@ export default function SignupPage() {
         description: "Welcome! Your account has been successfully created.",
       });
       // The onAuthStateChanged listener in useUser hook will update the user state,
-      // and the useEffect will handle redirection.
+      // and the useEffect will handle redirection to the dashboard.
     } catch (error) {
       if (error instanceof FirebaseError) {
         toast({
@@ -108,6 +108,8 @@ export default function SignupPage() {
     }
   };
   
+  // Show a loading skeleton only while the user's auth status is being checked,
+  // or if a logged-in user is in the process of being redirected.
   if (isUserLoading || user) {
      return (
        <div className="flex items-center justify-center min-h-screen">
@@ -141,6 +143,7 @@ export default function SignupPage() {
      );
   }
 
+  // If loading is finished and there is no user, show the signup form.
   return (
     <div className="w-full max-w-md">
       <Card>

@@ -51,7 +51,17 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
+
   useEffect(() => {
+    // This effect handles redirection for already logged-in users.
+    // It waits until the auth state is confirmed before acting.
     if (!isUserLoading && user) {
       const userDocRef = doc(firestore, 'users', user.uid);
       getDoc(userDocRef)
@@ -80,7 +90,12 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
-      // Redirection is handled by the useEffect hook
+      // Redirection for the new login is now handled by the useEffect hook.
+      // We show a toast to indicate success.
+       toast({
+          title: 'Success!',
+          description: 'You are now signed in.',
+        });
     } catch (error) {
        if (error instanceof FirebaseError) {
         toast({
@@ -94,6 +109,8 @@ export default function LoginPage() {
     }
   };
   
+  // Show a loading skeleton only while the user's auth status is being checked,
+  // or if a logged-in user is in the process of being redirected.
   if (isUserLoading || user) {
      return (
        <div className="flex items-center justify-center min-h-screen">
@@ -123,6 +140,7 @@ export default function LoginPage() {
      );
   }
 
+  // If loading is finished and there is no user, show the login form.
   return (
     <div className="w-full max-w-md">
       <Card>
