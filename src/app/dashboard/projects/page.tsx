@@ -19,6 +19,16 @@ function ManagerProjectView({ projects }: { projects: Project[] }) {
     { href: `/dashboard/transactions`, label: 'Add Expense/Income', icon: ArrowLeftRight },
   ];
 
+  if (!project) {
+    return (
+      <Card>
+          <CardContent className="pt-6">
+          <p>You have not been assigned to any projects yet. Please contact an administrator.</p>
+          </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
        <Card>
@@ -72,27 +82,12 @@ export default function ProjectsPage() {
     );
   }
 
-  if (!projects || projects.length === 0) {
-    return (
-        <>
-            <div className="flex items-center justify-between">
-                <h1 className="text-lg font-semibold md:text-2xl font-headline">My Project</h1>
-            </div>
-            <Card>
-                <CardContent className="pt-6">
-                <p>You have not been assigned to any projects yet. Please contact an administrator.</p>
-                </CardContent>
-            </Card>
-      </>
-    );
-  }
-
   return (
     <>
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold md:text-2xl font-headline">My Project</h1>
       </div>
-      <ManagerProjectView projects={projects} />
+       <ManagerProjectView projects={projects || []} />
     </>
   );
 }
