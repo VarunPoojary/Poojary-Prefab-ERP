@@ -53,7 +53,7 @@ service cloud.firestore {
     match /projects/{projectId} {
       // Admins can read all projects. Managers can only read projects they are assigned to.
       allow get: if isAdmin() || (isManager() && isAssignedManager(projectId));
-      allow list: if isAdmin() || (isManager() && request.auth.uid in resource.data.assigned_project_ids);
+      allow list: if isAdmin();
       
       // Only admins can create, update, or delete projects.
       allow write: if isAdmin();
