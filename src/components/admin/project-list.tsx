@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useRouter } from 'next/navigation';
 
 function ManagerName({ managerId }: { managerId: string }) {
   const firestore = useFirestore();
@@ -31,6 +32,7 @@ function ManagerName({ managerId }: { managerId: string }) {
 
 export function ProjectList() {
   const firestore = useFirestore();
+  const router = useRouter();
   const {
     data: projects,
     isLoading,
@@ -38,6 +40,10 @@ export function ProjectList() {
   } = useCollection<Project>(
     useMemo(() => query(collection(firestore, 'projects')), [firestore])
   );
+
+  const handleRowClick = (projectId: string) => {
+    router.push(`/admin/projects/${projectId}`);
+  };
 
   if (isLoading) {
     return (
@@ -68,12 +74,12 @@ export function ProjectList() {
         <TableBody>
             {projects && projects.length > 0 ? (
             projects.map((project) => (
-                <TableRow key={project.id}>
+                <TableRow key={project.id} onClick={() => handleRowClick(project.id)} className="cursor-pointer">
                 <TableCell className="font-medium">{project.name}</TableCell>
                 <TableCell>{project.location}</TableCell>
                 <TableCell>${project.budget_limit.toLocaleString()}</TableCell>
                 <TableCell>
-                    <Badge variant="outline">{project.status}</Badge>
+                    <Badge variant={project.status === 'active' ? 'default' : 'secondary'}>{project.status}</Badge>
                 </TableCell>
                 <TableCell>
                     <ManagerName managerId={project.assigned_manager_id} />
@@ -84,7 +90,8 @@ export function ProjectList() {
             <TableRow>
                 <TableCell colSpan={5} className="text-center">
                 No projects found.
-                </TableCell>            </TableRow>
+                </TableCell>
+            </TableRow>
             )}
         </TableBody>
         </Table>
