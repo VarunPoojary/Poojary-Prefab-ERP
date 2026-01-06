@@ -23,10 +23,11 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useCollection, useFirestore } from '@/firebase';
-import { collection, addDoc, query, where } from 'firebase/firestore';
+import { collection, addDoc, query, where, serverTimestamp } from 'firebase/firestore';
 import type { User } from '@/types/schema';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle } from 'lucide-react';
+import { useUser } from '@/firebase';
 
 const projectSchema = z.object({
   name: z.string().min(1, 'Project name is required'),
@@ -41,6 +42,7 @@ const projectSchema = z.object({
 export function CreateProjectModal() {
   const [open, setOpen] = useState(false);
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
 
   const managersQuery = useMemo(() =>
@@ -66,11 +68,19 @@ export function CreateProjectModal() {
   });
 
   const onSubmit = async (data: z.infer<typeof projectSchema>) => {
+    if (!user) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'You must be logged in to create a project.',
+        });
+        return;
+    }
     try {
       const projectsCollection = collection(firestore, 'projects');
       await addDoc(projectsCollection, {
         ...data,
-        status: 'planning', // Default status
+        status: 'active', // Default status as per new schema
       });
       toast({
         title: 'Project Created',

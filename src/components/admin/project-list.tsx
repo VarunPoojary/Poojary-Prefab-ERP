@@ -84,8 +84,7 @@ export function ProjectList() {
             <TableRow>
                 <TableCell colSpan={5} className="text-center">
                 No projects found.
-                </TableCell>
-            </TableRow>
+                </TableCell>            </TableRow>
             )}
         </TableBody>
         </Table>

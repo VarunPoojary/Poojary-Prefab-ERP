@@ -13,10 +13,7 @@
         "role": {
           "type": "string",
           "description": "The role of the user within the application ('admin' or 'manager').",
-          "format": "string",
-          "items": {
-            "type": "string"
-          }
+          "enum": ["admin", "manager"]
         },
         "name": {
           "type": "string",
@@ -27,9 +24,9 @@
           "description": "The user's email address.",
           "format": "email"
         },
-        "assignedProjectIds": {
+        "assigned_project_ids": {
           "type": "array",
-          "description": "References to Projects that the user is assigned to. (Relationship: User 1:N Project)",
+          "description": "References to Projects that the user is assigned to.",
           "items": {
             "type": "string"
           }
@@ -39,8 +36,7 @@
         "uid",
         "role",
         "name",
-        "email",
-        "assignedProjectIds"
+        "email"
       ]
     },
     "Project": {
@@ -61,25 +57,26 @@
           "type": "string",
           "description": "The location of the project."
         },
-        "budgetLimit": {
+        "budget_limit": {
           "type": "number",
           "description": "The budget limit for the project."
         },
-        "assignedManagerId": {
+        "assigned_manager_id": {
           "type": "string",
-          "description": "Reference to User assigned as manager. (Relationship: User 1:N Project)"
+          "description": "Reference to User assigned as manager."
         },
         "status": {
           "type": "string",
-          "description": "The status of the project."
+          "description": "The status of the project.",
+          "enum": ["active", "completed"]
         }
       },
       "required": [
         "id",
         "name",
         "location",
-        "budgetLimit",
-        "assignedManagerId",
+        "budget_limit",
+        "assigned_manager_id",
         "status"
       ]
     },
@@ -105,15 +102,16 @@
           "type": "string",
           "description": "The worker's phone number."
         },
-        "paymentType": {
+        "payment_type": {
           "type": "string",
-          "description": "The worker's payment type."
+          "description": "The worker's payment type.",
+          "enum": ["hourly", "daily"]
         },
-        "baseRate": {
+        "base_rate": {
           "type": "number",
           "description": "The worker's base rate."
         },
-        "currentBalance": {
+        "current_balance": {
           "type": "number",
           "description": "The worker's current balance."
         }
@@ -123,9 +121,9 @@
         "name",
         "skill",
         "phone",
-        "paymentType",
-        "baseRate",
-        "currentBalance"
+        "payment_type",
+        "base_rate",
+        "current_balance"
       ]
     },
     "Transaction": {
@@ -138,13 +136,14 @@
           "type": "string",
           "description": "Unique identifier for the transaction. (Primary Key)"
         },
-        "projectId": {
+        "project_id": {
           "type": "string",
-          "description": "Reference to Project. (Relationship: Project 1:N Transaction)"
+          "description": "Reference to Project."
         },
         "type": {
           "type": "string",
-          "description": "The type of transaction ('expense', 'income', 'payout_advance', 'payout_settlement')."
+          "description": "The type of transaction.",
+          "enum": ["expense", "income", "payout_advance", "payout_settlement"]
         },
         "amount": {
           "type": "number",
@@ -154,25 +153,39 @@
           "type": "string",
           "description": "The category of the transaction."
         },
-        "proofImageUrl": {
+        "description": {
+          "type": "string",
+          "description": "A description of the transaction."
+        },
+        "proof_image_url": {
           "type": "string",
           "description": "URL of the proof image for the transaction.",
           "format": "uri"
+        },
+        "worker_id": {
+            "type": "string",
+            "description": "Optional reference to a worker for payout transactions."
         },
         "timestamp": {
           "type": "string",
           "description": "The timestamp of the transaction.",
           "format": "date-time"
+        },
+        "created_by": {
+            "type": "string",
+            "description": "UID of the user who created the transaction."
         }
       },
       "required": [
         "id",
-        "projectId",
+        "project_id",
         "type",
         "amount",
         "category",
-        "proofImageUrl",
-        "timestamp"
+        "description",
+        "proof_image_url",
+        "timestamp",
+        "created_by"
       ]
     },
     "Task": {
@@ -185,19 +198,19 @@
           "type": "string",
           "description": "Unique identifier for the task. (Primary Key)"
         },
-        "projectId": {
+        "project_id": {
           "type": "string",
-          "description": "Reference to Project. (Relationship: Project 1:N Task)"
+          "description": "Reference to Project."
         },
         "title": {
           "type": "string",
           "description": "The title of the task."
         },
-        "isCompleted": {
+        "is_completed": {
           "type": "boolean",
           "description": "Indicates whether the task is completed."
         },
-        "completionPhotoUrl": {
+        "completion_photo_url": {
           "type": "string",
           "description": "URL of the completion photo for the task.",
           "format": "uri"
@@ -205,10 +218,10 @@
       },
       "required": [
         "id",
-        "projectId",
+        "project_id",
         "title",
-        "isCompleted",
-        "completionPhotoUrl"
+        "is_completed",
+        "completion_photo_url"
       ]
     },
     "Attendance": {
@@ -226,19 +239,20 @@
           "description": "The date of the attendance record.",
           "format": "date-time"
         },
-        "workerId": {
+        "worker_id": {
           "type": "string",
-          "description": "Reference to Worker. (Relationship: Worker 1:N Attendance)"
+          "description": "Reference to Worker."
         },
-        "projectId": {
+        "project_id": {
           "type": "string",
-          "description": "Reference to Project. (Relationship: Project 1:N Attendance)"
+          "description": "Reference to Project."
         },
         "status": {
           "type": "string",
-          "description": "The status of the attendance record."
+          "description": "The status of the attendance record.",
+          "enum": ["present", "absent"]
         },
-        "unitsWorked": {
+        "units_worked": {
           "type": "number",
           "description": "The number of units worked during the attendance record."
         }
@@ -246,10 +260,10 @@
       "required": [
         "id",
         "date",
-        "workerId",
-        "projectId",
+        "worker_id",
+        "project_id",
         "status",
-        "unitsWorked"
+        "units_worked"
       ]
     }
   },
@@ -268,13 +282,7 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores user profiles. Includes user's role ('admin' or 'manager'). This is used for authorization independence.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            }
-          ]
+          "description": "Stores user profiles, including their role ('admin' or 'manager')."
         }
       },
       {
@@ -284,13 +292,7 @@
           "schema": {
             "$ref": "#/backend/entities/Project"
           },
-          "description": "Stores project information. Includes 'assignedManagerId' to track project ownership.",
-          "params": [
-            {
-              "name": "projectId",
-              "description": "The unique identifier of the project."
-            }
-          ]
+          "description": "Stores project information."
         }
       },
       {
@@ -300,17 +302,7 @@
           "schema": {
             "$ref": "#/backend/entities/Transaction"
           },
-          "description": "Stores transactions associated with a project.",
-          "params": [
-            {
-              "name": "projectId",
-              "description": "The unique identifier of the project."
-            },
-            {
-              "name": "transactionId",
-              "description": "The unique identifier of the transaction."
-            }
-          ]
+          "description": "Stores transactions associated with a project."
         }
       },
       {
@@ -320,37 +312,17 @@
           "schema": {
             "$ref": "#/backend/entities/Task"
           },
-          "description": "Stores tasks associated with a project.",
-          "params": [
-            {
-              "name": "projectId",
-              "description": "The unique identifier of the project."
-            },
-            {
-              "name": "taskId",
-              "description": "The unique identifier of the task."
-            }
-          ]
+          "description": "Stores tasks associated with a project."
         }
       },
       {
-        "path": "/projects/{projectId}/attendance/{attendanceId}",
+        "path": "/attendance/{attendanceId}",
         "definition": {
           "entityName": "Attendance",
           "schema": {
             "$ref": "#/backend/entities/Attendance"
           },
-          "description": "Stores attendance records for workers on a project.",
-          "params": [
-            {
-              "name": "projectId",
-              "description": "The unique identifier of the project."
-            },
-            {
-              "name": "attendanceId",
-              "description": "The unique identifier of the attendance record."
-            }
-          ]
+          "description": "Stores all attendance records. A composite key on worker_id and date must be enforced."
         }
       },
       {
@@ -360,32 +332,9 @@
           "schema": {
             "$ref": "#/backend/entities/Worker"
           },
-          "description": "Stores worker profiles.",
-          "params": [
-            {
-              "name": "workerId",
-              "description": "The unique identifier of the worker."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/roles_admin/{userId}",
-        "definition": {
-          "entityName": "role_admin",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Documents in this collection indicate admin role. Existence over content, this supports QAPs.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who is an admin."
-            }
-          ]
+          "description": "Stores worker profiles globally."
         }
       }
-    ],
-    "reasoning": "The Firestore structure is designed to meet the application's requirements while adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), QAPs (Rules are not Filters), and Invariants. The structure uses path-based ownership for user-specific data and a dedicated collection for global roles.\n\n*   **Authorization Independence:** The structure avoids `get()` calls in security rules by storing roles directly within the `/users/{userId}` document. This denormalization allows atomic operations without hierarchical dependencies. For example, checking a user's role to access admin routes is done directly on the user document.\n*   **Clarity of Intent:** The structure is explicitly segmented based on ownership and access needs. User data is stored under `/users/{userId}`, making ownership clear. Project-related data is segregated, using `/projects/{projectId}` and subcollections for transactions, tasks, and attendance. This segregation simplifies the security rules.\n*   **DBAC:** Roles are stored in the `users` collection, and security rules use `request.auth.uid` to verify access. There are no custom claims, roles are read from Firestore documents.\n*   **QAPs:** By using dedicated collections and path-based ownership, the structure enables secure `list` operations. Listing projects assigned to a user can be performed securely through a query against the `projects` collection using the `assignedManagerId` field, avoiding the need for rule-based filtering. The admin role can be implemented through the existence of a document in `/roles_admin/{userId}`, allowing admins to list all projects.\n*   **Invariants:** Ownership, timestamps, and denormalized data are enforced through security rules. For example, the `assignedManagerId` field in the `projects` collection ensures the integrity of project ownership.\n\nEach document enforces strict semantic naming conventions. Wildcards are descriptive (e.g., `{projectId}` instead of `{id}`)."
+    ]
   }
 }

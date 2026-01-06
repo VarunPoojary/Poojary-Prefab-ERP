@@ -14,7 +14,7 @@ export interface Project {
   location: string;
   budget_limit: number;
   assigned_manager_id: string;
-  status: 'planning' | 'in_progress' | 'completed' | 'on_hold';
+  status: 'active' | 'completed';
 }
 
 export interface Worker {
@@ -22,7 +22,7 @@ export interface Worker {
   name: string;
   skill: string;
   phone: string;
-  payment_type: 'hourly' | 'daily' | 'contract';
+  payment_type: 'hourly' | 'daily';
   base_rate: number;
   current_balance: number;
 }
@@ -33,8 +33,11 @@ export interface Transaction {
   type: 'expense' | 'income' | 'payout_advance' | 'payout_settlement';
   amount: number;
   category: string;
-  proof_image_url?: string;
+  description: string;
+  proof_image_url: string;
+  worker_id?: string;
   timestamp: Timestamp | Date | string;
+  created_by: string;
 }
 
 export interface Task {
@@ -42,7 +45,7 @@ export interface Task {
   project_id: string;
   title: string;
   is_completed: boolean;
-  completion_photo_url?: string;
+  completion_photo_url: string;
 }
 
 export interface Attendance {
@@ -50,6 +53,6 @@ export interface Attendance {
   date: Timestamp;
   worker_id: string;
   project_id: string;
-  status: 'present' | 'absent' | 'leave';
+  status: 'present' | 'absent';
   units_worked: number;
 }
