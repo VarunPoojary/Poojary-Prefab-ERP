@@ -50,7 +50,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const router = useRouter();
   const { user, isUserLoading } = useUser();
-  const [isCheckingRole, setIsCheckingRole] = useState(false);
+  const [isCheckingRole, setIsCheckingRole] = useState(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,26 +61,30 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (!isUserLoading && user) {
-      setIsCheckingRole(true);
-      const userDocRef = doc(firestore, 'users', user.uid);
-      getDoc(userDocRef).then((userDoc) => {
-        if (userDoc.exists()) {
-          const userData = userDoc.data() as User;
-          if (userData.role === 'admin') {
-            router.replace('/admin/dashboard');
+    if (!isUserLoading) {
+      if (user) {
+        const userDocRef = doc(firestore, 'users', user.uid);
+        getDoc(userDocRef).then((userDoc) => {
+          if (userDoc.exists()) {
+            const userData = userDoc.data() as User;
+            if (userData.role === 'admin') {
+              router.replace('/admin/dashboard');
+            } else {
+              router.replace('/dashboard');
+            }
           } else {
+            // If doc doesn't exist, they are likely a new user or role isn't set
+            // Default to manager dashboard
             router.replace('/dashboard');
           }
-        } else {
+        }).catch(() => {
+          // In case of error, default to manager dashboard
           router.replace('/dashboard');
-        }
-      }).catch(() => {
-        // Handle error if needed, for now just go to dashboard
-        router.replace('/dashboard');
-      }).finally(() => {
+        });
+      } else {
+        // No user, stop checking
         setIsCheckingRole(false);
-      });
+      }
     }
   }, [user, isUserLoading, firestore, router]);
 
@@ -88,22 +92,7 @@ export default function LoginPage() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      const user = userCredential.user;
-      
-      const userDocRef = doc(firestore, 'users', user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (userDoc.exists()) {
-        const userData = userDoc.data() as User;
-        if (userData.role === 'admin') {
-          router.push('/admin/dashboard');
-        } else {
-          router.push('/dashboard');
-        }
-      } else {
-         router.push('/dashboard');
-      }
-
+      // Let the useEffect handle redirection
     } catch (error) {
       if (error instanceof FirebaseError && error.code === 'auth/user-not-found') {
         // If user not found, try to create a new account
@@ -126,7 +115,7 @@ export default function LoginPage() {
             title: 'Account Created',
             description: "We've created a new account for you.",
           });
-          router.push('/dashboard');
+          // Let the useEffect handle redirection
         } catch (createError) {
            if (createError instanceof FirebaseError) {
              toast({
@@ -148,11 +137,29 @@ export default function LoginPage() {
   
   if (isUserLoading || isCheckingRole || user) {
      return (
-       <div className="w-full max-w-md space-y-4">
-        <Skeleton className="h-40 w-full" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
+       <div className="flex items-center justify-center min-h-screen">
+          <div className="w-full max-w-md space-y-4 p-4">
+            <Card>
+                <CardHeader className="space-y-1 text-center">
+                  <div className="flex justify-center mb-4">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                  </div>
+                   <Skeleton className="h-6 w-3/4 mx-auto" />
+                   <Skeleton className="h-4 w-1/2 mx-auto" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <Skeleton className="h-10 w-full" />
+                </CardContent>
+            </Card>
+          </div>
        </div>
      );
   }
