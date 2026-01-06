@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useCollection } from '@/firebase';
+import { useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Project, User } from '@/types/schema';
@@ -19,9 +19,8 @@ import { useRouter } from 'next/navigation';
 
 function ManagerName({ managerId }: { managerId: string }) {
   const firestore = useFirestore();
-  const { data: users, isLoading } = useCollection<User>(
-    useMemo(() => query(collection(firestore, 'users')), [firestore])
-  );
+  const usersQuery = useMemoFirebase(() => query(collection(firestore, 'users')), [firestore]);
+  const { data: users, isLoading } = useCollection<User>(usersQuery);
 
   if (isLoading) return <Skeleton className="h-5 w-24" />;
 
@@ -33,13 +32,13 @@ function ManagerName({ managerId }: { managerId: string }) {
 export function ProjectList() {
   const firestore = useFirestore();
   const router = useRouter();
+  
+  const projectsQuery = useMemoFirebase(() => query(collection(firestore, 'projects')), [firestore]);
   const {
     data: projects,
     isLoading,
     error,
-  } = useCollection<Project>(
-    useMemo(() => query(collection(firestore, 'projects')), [firestore])
-  );
+  } = useCollection<Project>(projectsQuery);
 
   const handleRowClick = (projectId: string) => {
     router.push(`/admin/projects/${projectId}`);

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -22,7 +22,7 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, query, where, serverTimestamp } from 'firebase/firestore';
 import type { User } from '@/types/schema';
 import { useToast } from '@/hooks/use-toast';
@@ -45,7 +45,7 @@ export function CreateProjectModal() {
   const { user } = useUser();
   const { toast } = useToast();
 
-  const managersQuery = useMemo(() =>
+  const managersQuery = useMemoFirebase(() =>
     query(collection(firestore, 'users'), where('role', '==', 'manager')),
     [firestore]
   );
