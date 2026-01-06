@@ -51,14 +51,6 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
-  });
-
   useEffect(() => {
     if (!isUserLoading && user) {
       const userDocRef = doc(firestore, 'users', user.uid);
