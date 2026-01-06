@@ -49,7 +49,6 @@ export default function SignupPage() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPageLoading, setIsPageLoading] = useState(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,17 +60,9 @@ export default function SignupPage() {
   });
 
    useEffect(() => {
-    // This effect handles redirection for already logged-in users.
-    if (isUserLoading) {
-      return; // Wait for auth state to be determined.
-    }
-
-    if (user) {
+    if (!isUserLoading && user) {
       // If user is already logged in, redirect them.
       router.replace('/dashboard');
-    } else {
-       // If user is not logged in and auth check is complete, stop loading.
-      setIsPageLoading(false);
     }
   }, [user, isUserLoading, router]);
 
@@ -82,6 +73,7 @@ export default function SignupPage() {
       const newUser = newUserCredential.user;
 
       const userDocRef = doc(firestore, 'users', newUser.uid);
+      // Ensure assigned_project_ids is included, even if empty
       const newUserData: Omit<User, 'uid' | 'id'> = {
         name: values.name,
         email: newUser.email!,
@@ -116,7 +108,7 @@ export default function SignupPage() {
     }
   };
   
-  if (isPageLoading) {
+  if (isUserLoading || user) {
      return (
        <div className="flex items-center justify-center min-h-screen">
           <div className="w-full max-w-md space-y-4 p-4">

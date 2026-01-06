@@ -50,7 +50,6 @@ export default function LoginPage() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPageLoading, setIsPageLoading] = useState(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,12 +60,7 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    // This effect handles redirection for already logged-in users.
-    if (isUserLoading) {
-      return; // Wait for auth state to be determined.
-    }
-
-    if (user) {
+    if (!isUserLoading && user) {
       const userDocRef = doc(firestore, 'users', user.uid);
       getDoc(userDocRef)
         .then((userDoc) => {
@@ -78,15 +72,14 @@ export default function LoginPage() {
               router.replace('/dashboard');
             }
           } else {
-            router.replace('/dashboard'); // Default redirect
+            // Default redirect if doc doesn't exist for some reason
+            router.replace('/dashboard'); 
           }
         })
         .catch(() => {
-          router.replace('/dashboard'); // Default redirect on error
+          // Default redirect on error
+          router.replace('/dashboard'); 
         });
-    } else {
-      // If user is not logged in and auth check is complete, stop loading.
-      setIsPageLoading(false);
     }
   }, [user, isUserLoading, firestore, router]);
 
@@ -95,7 +88,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
-      // Let the useEffect handle redirection
+      // Redirection is handled by the useEffect hook
     } catch (error) {
        if (error instanceof FirebaseError) {
         toast({
@@ -109,7 +102,7 @@ export default function LoginPage() {
     }
   };
   
-  if (isPageLoading) {
+  if (isUserLoading || user) {
      return (
        <div className="flex items-center justify-center min-h-screen">
           <div className="w-full max-w-md space-y-4 p-4">
