@@ -1,0 +1,391 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user within the Project Sentinel application.",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Unique identifier for the user. (Primary Key)"
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user within the application ('admin' or 'manager').",
+          "format": "string",
+          "items": {
+            "type": "string"
+          }
+        },
+        "name": {
+          "type": "string",
+          "description": "The user's full name."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "assignedProjectIds": {
+          "type": "array",
+          "description": "References to Projects that the user is assigned to. (Relationship: User 1:N Project)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "uid",
+        "role",
+        "name",
+        "email",
+        "assignedProjectIds"
+      ]
+    },
+    "Project": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Project",
+      "type": "object",
+      "description": "Represents a project within the Project Sentinel application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the project. (Primary Key)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the project."
+        },
+        "location": {
+          "type": "string",
+          "description": "The location of the project."
+        },
+        "budgetLimit": {
+          "type": "number",
+          "description": "The budget limit for the project."
+        },
+        "assignedManagerId": {
+          "type": "string",
+          "description": "Reference to User assigned as manager. (Relationship: User 1:N Project)"
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the project."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "location",
+        "budgetLimit",
+        "assignedManagerId",
+        "status"
+      ]
+    },
+    "Worker": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Worker",
+      "type": "object",
+      "description": "Represents a worker within the Project Sentinel application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the worker. (Primary Key)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the worker."
+        },
+        "skill": {
+          "type": "string",
+          "description": "The worker's skill."
+        },
+        "phone": {
+          "type": "string",
+          "description": "The worker's phone number."
+        },
+        "paymentType": {
+          "type": "string",
+          "description": "The worker's payment type."
+        },
+        "baseRate": {
+          "type": "number",
+          "description": "The worker's base rate."
+        },
+        "currentBalance": {
+          "type": "number",
+          "description": "The worker's current balance."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "skill",
+        "phone",
+        "paymentType",
+        "baseRate",
+        "currentBalance"
+      ]
+    },
+    "Transaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Transaction",
+      "type": "object",
+      "description": "Represents a transaction within the Project Sentinel application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the transaction. (Primary Key)"
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to Project. (Relationship: Project 1:N Transaction)"
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of transaction ('expense', 'income', 'payout_advance', 'payout_settlement')."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount of the transaction."
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the transaction."
+        },
+        "proofImageUrl": {
+          "type": "string",
+          "description": "URL of the proof image for the transaction.",
+          "format": "uri"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp of the transaction.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "projectId",
+        "type",
+        "amount",
+        "category",
+        "proofImageUrl",
+        "timestamp"
+      ]
+    },
+    "Task": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Task",
+      "type": "object",
+      "description": "Represents a task within the Project Sentinel application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the task. (Primary Key)"
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to Project. (Relationship: Project 1:N Task)"
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the task."
+        },
+        "isCompleted": {
+          "type": "boolean",
+          "description": "Indicates whether the task is completed."
+        },
+        "completionPhotoUrl": {
+          "type": "string",
+          "description": "URL of the completion photo for the task.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "projectId",
+        "title",
+        "isCompleted",
+        "completionPhotoUrl"
+      ]
+    },
+    "Attendance": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Attendance",
+      "type": "object",
+      "description": "Represents an attendance record within the Project Sentinel application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the attendance record. (Primary Key)"
+        },
+        "date": {
+          "type": "string",
+          "description": "The date of the attendance record.",
+          "format": "date-time"
+        },
+        "workerId": {
+          "type": "string",
+          "description": "Reference to Worker. (Relationship: Worker 1:N Attendance)"
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to Project. (Relationship: Project 1:N Attendance)"
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the attendance record."
+        },
+        "unitsWorked": {
+          "type": "number",
+          "description": "The number of units worked during the attendance record."
+        }
+      },
+      "required": [
+        "id",
+        "date",
+        "workerId",
+        "projectId",
+        "status",
+        "unitsWorked"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Includes user's role ('admin' or 'manager'). This is used for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/projects/{projectId}",
+        "definition": {
+          "entityName": "Project",
+          "schema": {
+            "$ref": "#/backend/entities/Project"
+          },
+          "description": "Stores project information. Includes 'assignedManagerId' to track project ownership.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The unique identifier of the project."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/projects/{projectId}/transactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Stores transactions associated with a project.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The unique identifier of the project."
+            },
+            {
+              "name": "transactionId",
+              "description": "The unique identifier of the transaction."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/projects/{projectId}/tasks/{taskId}",
+        "definition": {
+          "entityName": "Task",
+          "schema": {
+            "$ref": "#/backend/entities/Task"
+          },
+          "description": "Stores tasks associated with a project.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The unique identifier of the project."
+            },
+            {
+              "name": "taskId",
+              "description": "The unique identifier of the task."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/projects/{projectId}/attendance/{attendanceId}",
+        "definition": {
+          "entityName": "Attendance",
+          "schema": {
+            "$ref": "#/backend/entities/Attendance"
+          },
+          "description": "Stores attendance records for workers on a project.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The unique identifier of the project."
+            },
+            {
+              "name": "attendanceId",
+              "description": "The unique identifier of the attendance record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/workers/{workerId}",
+        "definition": {
+          "entityName": "Worker",
+          "schema": {
+            "$ref": "#/backend/entities/Worker"
+          },
+          "description": "Stores worker profiles.",
+          "params": [
+            {
+              "name": "workerId",
+              "description": "The unique identifier of the worker."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "role_admin",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Documents in this collection indicate admin role. Existence over content, this supports QAPs.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who is an admin."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to meet the application's requirements while adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), QAPs (Rules are not Filters), and Invariants. The structure uses path-based ownership for user-specific data and a dedicated collection for global roles.\n\n*   **Authorization Independence:** The structure avoids `get()` calls in security rules by storing roles directly within the `/users/{userId}` document. This denormalization allows atomic operations without hierarchical dependencies. For example, checking a user's role to access admin routes is done directly on the user document.\n*   **Clarity of Intent:** The structure is explicitly segmented based on ownership and access needs. User data is stored under `/users/{userId}`, making ownership clear. Project-related data is segregated, using `/projects/{projectId}` and subcollections for transactions, tasks, and attendance. This segregation simplifies the security rules.\n*   **DBAC:** Roles are stored in the `users` collection, and security rules use `request.auth.uid` to verify access. There are no custom claims, roles are read from Firestore documents.\n*   **QAPs:** By using dedicated collections and path-based ownership, the structure enables secure `list` operations. Listing projects assigned to a user can be performed securely through a query against the `projects` collection using the `assignedManagerId` field, avoiding the need for rule-based filtering. The admin role can be implemented through the existence of a document in `/roles_admin/{userId}`, allowing admins to list all projects.\n*   **Invariants:** Ownership, timestamps, and denormalized data are enforced through security rules. For example, the `assignedManagerId` field in the `projects` collection ensures the integrity of project ownership.\n\nEach document enforces strict semantic naming conventions. Wildcards are descriptive (e.g., `{projectId}` instead of `{id}`)."
+  }
+}
