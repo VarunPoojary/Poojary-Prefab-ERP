@@ -50,7 +50,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const router = useRouter();
   const { user, isUserLoading } = useUser();
-  const [isCheckingRole, setIsCheckingRole] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,10 +61,13 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (!isUserLoading) {
-      if (user) {
-        const userDocRef = doc(firestore, 'users', user.uid);
-        getDoc(userDocRef).then((userDoc) => {
+    if (isUserLoading) {
+      return; // Wait for Firebase auth to initialize
+    }
+    if (user) {
+      const userDocRef = doc(firestore, 'users', user.uid);
+      getDoc(userDocRef)
+        .then((userDoc) => {
           if (userDoc.exists()) {
             const userData = userDoc.data() as User;
             if (userData.role === 'admin') {
@@ -73,20 +76,17 @@ export default function LoginPage() {
               router.replace('/dashboard');
             }
           } else {
-            // If doc doesn't exist, they are likely a new user or role isn't set
-            // Default to manager dashboard
+            // Default to manager dashboard if doc doesn't exist
             router.replace('/dashboard');
           }
-        }).catch(() => {
-          // In case of error, default to manager dashboard
+        })
+        .catch(() => {
+          // Default to manager dashboard on error
           router.replace('/dashboard');
-        }).finally(() => {
-          setIsCheckingRole(false);
         });
-      } else {
-        // No user, stop checking
-        setIsCheckingRole(false);
-      }
+    } else {
+      // No user is logged in, stop loading and show the form.
+      setIsLoading(false);
     }
   }, [user, isUserLoading, firestore, router]);
 
@@ -104,7 +104,7 @@ export default function LoginPage() {
 
           // Create a user document in Firestore
           const userDocRef = doc(firestore, 'users', newUser.uid);
-          const newUserData: User = {
+          const newUserData: Omit<User, 'id'> = {
             uid: newUser.uid,
             email: newUser.email!,
             name: newUser.email!.split('@')[0],
@@ -137,7 +137,7 @@ export default function LoginPage() {
     }
   };
   
-  if (isUserLoading || isCheckingRole) {
+  if (isLoading) {
      return (
        <div className="flex items-center justify-center min-h-screen">
           <div className="w-full max-w-md space-y-4 p-4">
@@ -164,38 +164,6 @@ export default function LoginPage() {
           </div>
        </div>
      );
-  }
-
-  // If user is logged in, useEffect will handle redirect. If not, show the form.
-  if (user) {
-    // Render a loading state or nothing while the redirect is in progress.
-    // The useEffect above will perform the redirect.
-    return (
-       <div className="flex items-center justify-center min-h-screen">
-          <div className="w-full max-w-md space-y-4 p-4">
-            <Card>
-                <CardHeader className="space-y-1 text-center">
-                  <div className="flex justify-center mb-4">
-                      <Skeleton className="h-8 w-8 rounded-full" />
-                  </div>
-                   <Skeleton className="h-6 w-3/4 mx-auto" />
-                   <Skeleton className="h-4 w-1/2 mx-auto" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                  <Skeleton className="h-10 w-full" />
-                </CardContent>
-            </Card>
-          </div>
-       </div>
-    );
   }
 
   return (
