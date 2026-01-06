@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useCollection, useMemoFirebase } from '@/firebase';
-import { collectionGroup, query, doc, deleteDoc } from 'firebase/firestore';
+import { collectionGroup, query, doc, deleteDoc, collection } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Transaction, Project } from '@/types/schema';
 import {
@@ -33,8 +33,8 @@ import { format } from 'date-fns';
 
 function ProjectName({ projectId }: { projectId: string }) {
   const firestore = useFirestore();
-  // This could be optimized by fetching all projects once, but for simplicity we fetch one by one.
-  const projectsQuery = useMemoFirebase(() => query(collectionGroup(firestore, 'projects')), [firestore]);
+  // Fetch all projects to find the name from the ID.
+  const projectsQuery = useMemoFirebase(() => query(collection(firestore, 'projects')), [firestore]);
   const { data: projects, isLoading } = useCollection<Project>(projectsQuery);
 
   if (isLoading) return <Skeleton className="h-5 w-24" />;
