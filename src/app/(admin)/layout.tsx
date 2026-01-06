@@ -33,6 +33,7 @@ import { ProtectedRoute } from '@/components/protected-route';
 const adminMenuItems = [
   { href: '/admin/dashboard', label: 'Admin Dashboard', icon: Shield },
   { href: '/admin/workers', label: 'Workers & Payroll', icon: Users },
+  { href: '/admin/transactions', label: 'Transactions', icon: ArrowLeftRight },
   // Add other admin-specific links here
 ];
 
