@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -33,6 +33,7 @@ import { useRouter } from 'next/navigation';
 import { FirebaseError } from 'firebase/app';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import type { User } from '@/types/schema';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const formSchema = z.object({
   email: z.string().email({
@@ -48,7 +49,8 @@ export default function LoginPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
+  const [isCheckingRole, setIsCheckingRole] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -57,6 +59,31 @@ export default function LoginPage() {
       password: '',
     },
   });
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      setIsCheckingRole(true);
+      const userDocRef = doc(firestore, 'users', user.uid);
+      getDoc(userDocRef).then((userDoc) => {
+        if (userDoc.exists()) {
+          const userData = userDoc.data() as User;
+          if (userData.role === 'admin') {
+            router.replace('/admin/dashboard');
+          } else {
+            router.replace('/dashboard');
+          }
+        } else {
+          router.replace('/dashboard');
+        }
+      }).catch(() => {
+        // Handle error if needed, for now just go to dashboard
+        router.replace('/dashboard');
+      }).finally(() => {
+        setIsCheckingRole(false);
+      });
+    }
+  }, [user, isUserLoading, firestore, router]);
+
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
@@ -119,10 +146,15 @@ export default function LoginPage() {
     }
   };
   
-  // If user is already logged in, redirect them
-  if (user) {
-    // router.push('/dashboard');
-    return null; // or a loading indicator
+  if (isUserLoading || isCheckingRole || user) {
+     return (
+       <div className="w-full max-w-md space-y-4">
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+       </div>
+     );
   }
 
   return (
