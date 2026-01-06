@@ -1,26 +1,98 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+'use client';
+
+import { useMemo } from 'react';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import type { Project } from '@/types/schema';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowLeftRight, CalendarCheck, ClipboardCheck, PlusCircle } from 'lucide-react';
+import Link from 'next/link';
+
+function ManagerProjectView({ projects }: { projects: Project[] }) {
+  const project = projects[0]; // For now, manager is assigned to one project
+
+  const actions = [
+    { href: `/dashboard/attendance`, label: 'Mark Attendance', icon: CalendarCheck },
+    { href: `/dashboard/tasks`, label: 'Manage Tasks', icon: ClipboardCheck },
+    { href: `/dashboard/transactions`, label: 'Add Expense/Income', icon: ArrowLeftRight },
+  ];
+
+  return (
+    <div className="space-y-6">
+       <Card>
+            <CardHeader>
+                <CardTitle>{project.name}</CardTitle>
+                <CardDescription>{project.location}</CardDescription>
+            </CardHeader>
+       </Card>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {actions.map((action) => (
+          <Button
+            key={action.href}
+            asChild
+            variant="outline"
+            className="h-24 flex-col gap-2 text-base"
+          >
+            <Link href={action.href}>
+              <action.icon className="h-6 w-6" />
+              {action.label}
+            </Link>
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function ProjectsPage() {
+  const firestore = useFirestore();
+  const { user } = useUser();
+
+  const projectsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(firestore, 'projects'), where('assigned_manager_id', '==', user.uid));
+  }, [firestore, user]);
+
+  const { data: projects, isLoading } = useCollection<Project>(projectsQuery);
+
+  if (isLoading) {
+    return (
+        <div className="space-y-4">
+            <h1 className="text-lg font-semibold md:text-2xl font-headline">My Project</h1>
+            <Skeleton className="h-24 w-full" />
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+            </div>
+        </div>
+    );
+  }
+
+  if (!projects || projects.length === 0) {
+    return (
+        <>
+            <div className="flex items-center justify-between">
+                <h1 className="text-lg font-semibold md:text-2xl font-headline">My Project</h1>
+            </div>
+            <Card>
+                <CardContent className="pt-6">
+                <p>You have not been assigned to any projects yet. Please contact an administrator.</p>
+                </CardContent>
+            </Card>
+      </>
+    );
+  }
+
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl font-headline">Projects</h1>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Project
-        </Button>
+        <h1 className="text-lg font-semibold md:text-2xl font-headline">My Project</h1>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Project List</CardTitle>
-          <CardDescription>Manage all your construction projects.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p>A table of projects will be displayed here.</p>
-        </CardContent>
-      </Card>
+      <ManagerProjectView projects={projects} />
     </>
   );
 }

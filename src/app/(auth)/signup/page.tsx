@@ -63,11 +63,12 @@ export default function SignupPage() {
     // This effect handles redirection for already logged-in users.
     // It waits until the auth state is confirmed before acting.
     if (!isUserLoading && user) {
-      router.replace('/dashboard');
+      router.replace('/dashboard/projects');
     }
   }, [user, isUserLoading, router]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!auth || !firestore) return;
     setIsSubmitting(true);
     try {
       const newUserCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);

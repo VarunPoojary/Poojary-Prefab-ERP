@@ -51,18 +51,10 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
-  });
-
   useEffect(() => {
     // This effect handles redirection for already logged-in users.
     // It waits until the auth state is confirmed before acting.
-    if (!isUserLoading && user) {
+    if (!isUserLoading && user && firestore) {
       const userDocRef = doc(firestore, 'users', user.uid);
       getDoc(userDocRef)
         .then((userDoc) => {
@@ -71,22 +63,23 @@ export default function LoginPage() {
             if (userData.role === 'admin') {
               router.replace('/admin/dashboard');
             } else {
-              router.replace('/dashboard');
+              router.replace('/dashboard/projects');
             }
           } else {
             // Default redirect if doc doesn't exist for some reason
-            router.replace('/dashboard'); 
+            router.replace('/dashboard/projects'); 
           }
         })
         .catch(() => {
           // Default redirect on error
-          router.replace('/dashboard'); 
+          router.replace('/dashboard/projects'); 
         });
     }
   }, [user, isUserLoading, firestore, router]);
 
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!auth) return;
     setIsSubmitting(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);

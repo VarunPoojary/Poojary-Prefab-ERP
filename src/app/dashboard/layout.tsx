@@ -31,7 +31,6 @@ import { ProtectedRoute } from '@/components/protected-route';
 
 
 const menuItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/projects', label: 'Projects', icon: Briefcase },
   { href: '/dashboard/workers', label: 'Workers', icon: Users },
   { href: '/dashboard/transactions', label: 'Transactions', icon: ArrowLeftRight },
@@ -68,7 +67,7 @@ export default function DashboardLayout({
                 <SidebarMenuItem key={href}>
                   <Link href={href}>
                     <SidebarMenuButton
-                      isActive={pathname.startsWith(href) && href !== '/dashboard' || pathname === '/dashboard'}
+                      isActive={pathname.startsWith(href)}
                       tooltip={label}
                     >
                       <Icon />

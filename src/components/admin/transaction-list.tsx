@@ -36,7 +36,7 @@ export function TransactionList() {
   const { toast } = useToast();
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectsMap, setProjectsMap] = useState<Map<string, string>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -54,7 +54,9 @@ export function TransactionList() {
       return;
     }
     if (projectData) {
-      setProjects(projectData);
+      const newProjectsMap = new Map(projectData.map(p => [p.id, p.name]));
+      setProjectsMap(newProjectsMap);
+
       const fetchTransactions = async () => {
         setIsLoading(true);
         try {
@@ -100,8 +102,7 @@ export function TransactionList() {
   }
   
   const getProjectName = (projectId: string) => {
-      const project = projects.find(p => p.id === projectId);
-      return project?.name || 'Unknown Project';
+      return projectsMap.get(projectId) || 'Unknown Project';
   }
 
   if (isLoading) {
