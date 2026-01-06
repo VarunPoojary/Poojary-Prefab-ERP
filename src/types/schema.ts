@@ -34,7 +34,7 @@ export interface Transaction {
   amount: number;
   category: string;
   proof_image_url?: string;
-  timestamp: Timestamp;
+  timestamp: Timestamp | Date | string;
 }
 
 export interface Task {

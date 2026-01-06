@@ -11,16 +11,34 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth, useUser } from '@/firebase';
-import { CreditCard, LogOut, User } from 'lucide-react';
+import { useAuth, useUser, useFirestore } from '@/firebase';
+import { CreditCard, LogOut, User as UserIcon, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { Skeleton } from './ui/skeleton';
+import { doc, getDoc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import type { User } from '@/types/schema';
+import Link from 'next/link';
 
 export function UserNav() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const router = useRouter();
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user && firestore) {
+      const userDocRef = doc(firestore, 'users', user.uid);
+      getDoc(userDocRef).then((docSnap) => {
+        if (docSnap.exists()) {
+          const userData = docSnap.data() as User;
+          setUserRole(userData.role);
+        }
+      });
+    }
+  }, [user, firestore]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -69,9 +87,17 @@ export function UserNav() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
+            <UserIcon className="mr-2 h-4 w-4" />
             <span>Profile</span>
           </DropdownMenuItem>
+           {userRole === 'admin' && (
+            <DropdownMenuItem asChild>
+              <Link href="/admin/dashboard">
+                <Shield className="mr-2 h-4 w-4" />
+                Admin
+              </Link>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem>
             <CreditCard className="mr-2 h-4 w-4" />
             <span>Billing</span>

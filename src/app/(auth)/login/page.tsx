@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Icons } from '@/components/icons';
-import { useAuth } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -31,6 +31,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { FirebaseError } from 'firebase/app';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import type { User } from '@/types/schema';
 
 const formSchema = z.object({
   email: z.string().email({
@@ -43,8 +45,10 @@ const formSchema = z.object({
 
 export default function LoginPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
+  const { user } = useUser();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -56,17 +60,41 @@ export default function LoginPage() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
-      toast({
-        title: 'Login Successful',
-        description: 'Welcome back!',
-      });
-      router.push('/dashboard');
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+      
+      const userDocRef = doc(firestore, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data() as User;
+        if (userData.role === 'admin') {
+          router.push('/admin/dashboard');
+        } else {
+          router.push('/dashboard');
+        }
+      } else {
+         router.push('/dashboard');
+      }
+
     } catch (error) {
       if (error instanceof FirebaseError && error.code === 'auth/user-not-found') {
         // If user not found, try to create a new account
         try {
-          await createUserWithEmailAndPassword(auth, values.email, values.password);
+          const newUserCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+          const newUser = newUserCredential.user;
+
+          // Create a user document in Firestore
+          const userDocRef = doc(firestore, 'users', newUser.uid);
+          const newUserData: User = {
+            uid: newUser.uid,
+            email: newUser.email!,
+            name: newUser.email!.split('@')[0],
+            role: 'manager', // Default role for new users
+            assigned_project_ids: [],
+          };
+          await setDoc(userDocRef, newUserData);
+
            toast({
             title: 'Account Created',
             description: "We've created a new account for you.",
@@ -90,6 +118,12 @@ export default function LoginPage() {
       }
     }
   };
+  
+  // If user is already logged in, redirect them
+  if (user) {
+    // router.push('/dashboard');
+    return null; // or a loading indicator
+  }
 
   return (
     <div className="w-full max-w-md">
