@@ -13,63 +13,42 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
+  
   useEffect(() => {
     if (isUserLoading) {
-      return; // Wait until user state is loaded from auth
+      return; // Wait until user state is definitively loaded
     }
 
     if (!user) {
-      // If no user, not authorized, redirect to login, unless we are already there
-      setIsLoading(false);
-      if (pathname !== '/login') {
-         router.replace('/login');
-      }
+      // If no user, redirect to login. The auth pages are not wrapped in this component.
+      router.replace('/login');
       return;
     }
 
     // User is authenticated, now check role for authorization
     const userDocRef = doc(firestore, 'users', user.uid);
     getDoc(userDocRef).then((docSnap) => {
-      let authorized = false;
       if (docSnap.exists()) {
         const userData = docSnap.data() as User;
-        if (pathname.startsWith('/admin')) {
-          if (userData.role === 'admin') {
-            authorized = true;
-          } else {
-             // Manager trying to access admin route, redirect them
-            router.replace('/dashboard');
-          }
-        } else if (pathname.startsWith('/dashboard') || pathname === '/') {
-          // All authenticated users can access general dashboard routes
-          authorized = true;
-        } else if (pathname === '/login' && user) {
-          // If user is logged in and on login page, redirect them
-           if (userData.role === 'admin') {
-              router.replace('/admin/dashboard');
-            } else {
-              router.replace('/dashboard');
-            }
+        if (pathname.startsWith('/admin') && userData.role !== 'admin') {
+          // Manager trying to access admin route, redirect them
+          router.replace('/dashboard');
+        } else {
+          // User is authorized for this route.
+          setIsAuthorized(true);
         }
       } else {
-         // User doc doesn't exist, they can't access protected routes
-         // This might happen if creation failed. Redirect to login to be safe.
+         // User doc doesn't exist, they can't access protected routes.
          router.replace('/login');
       }
-      setIsAuthorized(authorized);
-      setIsLoading(false);
     }).catch(() => {
-        // Error fetching doc, treat as unauthorized
-        setIsLoading(false);
-        setIsAuthorized(false);
+        // Error fetching doc, treat as unauthorized and send to login.
         router.replace('/login');
     });
 
   }, [isUserLoading, user, firestore, router, pathname]);
 
-  if (isLoading || isUserLoading) {
+  if (isUserLoading || !isAuthorized) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="flex flex-col items-center gap-4">
@@ -83,14 +62,6 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
   
-  if (isAuthorized) {
-    return <>{children}</>;
-  }
-
-  // Fallback for unauthorized and not loading, mostly for routes like /login when user is not logged in.
-  if(pathname === '/login' && !user) {
-    return <>{children}</>;
-  }
-
-  return null;
+  // If we've reached this point, user is loaded and authorized.
+  return <>{children}</>;
 }

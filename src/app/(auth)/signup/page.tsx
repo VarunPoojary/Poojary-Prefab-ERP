@@ -49,6 +49,7 @@ export default function SignupPage() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -60,9 +61,17 @@ export default function SignupPage() {
   });
 
    useEffect(() => {
-    if (!isUserLoading && user) {
+    // This effect handles redirection for already logged-in users.
+    if (isUserLoading) {
+      return; // Wait for auth state to be determined.
+    }
+
+    if (user) {
       // If user is already logged in, redirect them.
       router.replace('/dashboard');
+    } else {
+       // If user is not logged in and auth check is complete, stop loading.
+      setIsPageLoading(false);
     }
   }, [user, isUserLoading, router]);
 
@@ -73,7 +82,7 @@ export default function SignupPage() {
       const newUser = newUserCredential.user;
 
       const userDocRef = doc(firestore, 'users', newUser.uid);
-      const newUserData: Omit<User, 'uid'> = {
+      const newUserData: Omit<User, 'uid' | 'id'> = {
         name: values.name,
         email: newUser.email!,
         role: 'manager', // Default role
@@ -86,7 +95,8 @@ export default function SignupPage() {
         title: 'Account Created',
         description: "Welcome! Your account has been successfully created.",
       });
-      // The useEffect will handle redirection once the user state is updated.
+      // The onAuthStateChanged listener in useUser hook will update the user state,
+      // and the useEffect will handle redirection.
     } catch (error) {
       if (error instanceof FirebaseError) {
         toast({
@@ -106,7 +116,7 @@ export default function SignupPage() {
     }
   };
   
-  if (isUserLoading || user) {
+  if (isPageLoading) {
      return (
        <div className="flex items-center justify-center min-h-screen">
           <div className="w-full max-w-md space-y-4 p-4">

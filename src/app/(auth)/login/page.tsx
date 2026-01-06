@@ -50,6 +50,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -60,7 +61,12 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (!isUserLoading && user) {
+    // This effect handles redirection for already logged-in users.
+    if (isUserLoading) {
+      return; // Wait for auth state to be determined.
+    }
+
+    if (user) {
       const userDocRef = doc(firestore, 'users', user.uid);
       getDoc(userDocRef)
         .then((userDoc) => {
@@ -72,14 +78,15 @@ export default function LoginPage() {
               router.replace('/dashboard');
             }
           } else {
-            // Default to manager dashboard if doc doesn't exist
-            router.replace('/dashboard');
+            router.replace('/dashboard'); // Default redirect
           }
         })
         .catch(() => {
-          // Default to manager dashboard on error
-          router.replace('/dashboard');
+          router.replace('/dashboard'); // Default redirect on error
         });
+    } else {
+      // If user is not logged in and auth check is complete, stop loading.
+      setIsPageLoading(false);
     }
   }, [user, isUserLoading, firestore, router]);
 
@@ -102,7 +109,7 @@ export default function LoginPage() {
     }
   };
   
-  if (isUserLoading || user) {
+  if (isPageLoading) {
      return (
        <div className="flex items-center justify-center min-h-screen">
           <div className="w-full max-w-md space-y-4 p-4">
