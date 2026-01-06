@@ -33,7 +33,7 @@ export default function LandingPage() {
             Login
           </Link>
           <Button asChild>
-             <Link href="/login" prefetch={false}>Get Started</Link>
+             <Link href="/signup" prefetch={false}>Get Started</Link>
           </Button>
         </nav>
       </header>
@@ -52,7 +52,7 @@ export default function LandingPage() {
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   <Button size="lg" asChild>
-                    <Link href="/login" prefetch={false}>
+                    <Link href="/dashboard" prefetch={false}>
                       Go to Dashboard
                     </Link>
                   </Button>

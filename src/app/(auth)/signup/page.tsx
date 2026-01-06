@@ -24,13 +24,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Icons } from '@/components/icons';
 import { useAuth, useFirestore, useUser } from '@/firebase';
-import {
-  signInWithEmailAndPassword,
-} from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { FirebaseError } from 'firebase/app';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import type { User } from '@/types/schema';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -43,7 +41,7 @@ const formSchema = z.object({
   }),
 });
 
-export default function LoginPage() {
+export default function SignupPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -59,46 +57,52 @@ export default function LoginPage() {
     },
   });
 
-  useEffect(() => {
+   useEffect(() => {
     if (isUserLoading) {
       return; 
     }
     if (user) {
-      const userDocRef = doc(firestore, 'users', user.uid);
-      getDoc(userDocRef)
-        .then((userDoc) => {
-          if (userDoc.exists()) {
-            const userData = userDoc.data() as User;
-            if (userData.role === 'admin') {
-              router.replace('/admin/dashboard');
-            } else {
-              router.replace('/dashboard');
-            }
-          } else {
-            // Default to manager dashboard if doc doesn't exist
-            router.replace('/dashboard');
-          }
-        })
-        .catch(() => {
-          // Default to manager dashboard on error
-          router.replace('/dashboard');
-        });
+      // If user is already logged in, redirect them.
+      router.replace('/dashboard');
     } else {
       setIsCheckingUser(false);
     }
-  }, [user, isUserLoading, firestore, router]);
-
+  }, [user, isUserLoading, router]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
-      // Let the useEffect handle redirection
+      const newUserCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const newUser = newUserCredential.user;
+
+      const userDocRef = doc(firestore, 'users', newUser.uid);
+      // We are omitting `id` because it's the document ID, not a field.
+      const newUserData: Omit<User, 'id'> = {
+        uid: newUser.uid,
+        email: newUser.email!,
+        name: newUser.email!.split('@')[0], // Default name from email
+        role: 'manager', // Default role
+        assigned_project_ids: [],
+      };
+      
+      await setDoc(userDocRef, newUserData);
+
+      toast({
+        title: 'Account Created',
+        description: "Welcome! Your account has been successfully created.",
+      });
+      // The useEffect will handle redirection once the user state is updated.
     } catch (error) {
-       if (error instanceof FirebaseError) {
+      if (error instanceof FirebaseError) {
         toast({
           variant: 'destructive',
-          title: 'Error',
+          title: 'Sign Up Error',
           description: error.message,
+        });
+      } else {
+         toast({
+          variant: 'destructive',
+          title: 'An unexpected error occurred.',
+          description: 'Please try again.',
         });
       }
     }
@@ -141,10 +145,10 @@ export default function LoginPage() {
             <Icons.logo className="h-8 w-8 text-primary" />
           </div>
           <CardTitle className="text-2xl font-headline">
-            Welcome Back
+            Create an Account
           </CardTitle>
           <CardDescription>
-            Enter your email and password to sign in to your account.
+            Enter your email and password to get started.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -157,7 +161,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="m@example.com" {...field} />
+                      <Input placeholder="manager@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -168,15 +172,7 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex items-center">
-                      <FormLabel>Password</FormLabel>
-                      <Link
-                        href="#"
-                        className="ml-auto inline-block text-sm underline"
-                      >
-                        Forgot your password?
-                      </Link>
-                    </div>
+                    <FormLabel>Password</FormLabel>
                     <FormControl>
                       <Input type="password" {...field} />
                     </FormControl>
@@ -185,15 +181,15 @@ export default function LoginPage() {
                 )}
               />
               <Button type="submit" className="w-full">
-                Sign In
+                Create Account
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardContent className="mt-4 text-center text-sm">
-          Don't have an account?{' '}
-          <Link href="/signup" className="underline">
-            Sign up
+          Already have an account?{' '}
+          <Link href="/login" className="underline">
+            Sign in
           </Link>
         </CardContent>
       </Card>
