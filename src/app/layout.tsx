@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
+import { FirebaseClientProvider } from '@/firebase';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
   title: 'Project Sentinel',
@@ -23,7 +25,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet" />
       </head>
       <body className={cn('min-h-screen bg-background font-body antialiased')}>
-        {children}
+        <Suspense>
+          <FirebaseClientProvider>{children}</FirebaseClientProvider>
+        </Suspense>
         <Toaster />
       </body>
     </html>
