@@ -85,6 +85,11 @@ service cloud.firestore {
       allow read: if isAdmin();
     }
     
+    // This rule allows admins to perform collection group queries on 'transactions'.
+    match /{path=**}/transactions/{transactionId} {
+      allow read, update: if isAdmin();
+    }
+
     match /projects/{projectId}/transactions/{transactionId} {
       // Admins can read all transactions. Managers can read transactions for their projects.
       allow read: if isAdmin() || (isManager() && isAssignedManager(projectId));
@@ -92,7 +97,7 @@ service cloud.firestore {
       // Managers can create transactions for their projects.
       allow create: if isManager() && isAssignedManager(projectId);
       
-      // Only admins can delete transactions. Updates are not allowed.
+      // Only admins can delete transactions. Updates are not allowed for managers on this path.
       allow update: if false; 
       allow delete: if isAdmin();
     }
