@@ -31,9 +31,12 @@ const attendanceSchema = z.object({
   date: z.date({
     required_error: "A date is required.",
   }),
-  present_workers: z.record(z.boolean()).optional(),
+  // Allow 'any' initially to prevent Array vs Object type errors from blocking the form
+  present_workers: z.any().optional(),
 }).refine(data => {
-    return data.present_workers && Object.values(data.present_workers).some(Boolean);
+    if (!data.present_workers) return false;
+    // Check if at least one value is true
+    return Object.values(data.present_workers).some(Boolean);
 }, {
     message: "You must select at least one worker.",
     path: ["present_workers"],
@@ -88,8 +91,10 @@ export function AddAttendanceModal({ projectId }: AddAttendanceModalProps) {
     const batch = writeBatch(firestore);
     const attendanceCollection = collection(firestore, 'attendance');
 
-    Object.entries(data.present_workers).forEach(([workerId, isPresent]) => {
+    Object.entries(data.present_workers).forEach(([key, isPresent]) => {
       if (isPresent) {
+        const workerId = key.replace('work_', ''); 
+        
         const docRef = doc(attendanceCollection);
         batch.set(docRef, {
           project_id: projectId,
@@ -193,12 +198,12 @@ export function AddAttendanceModal({ projectId }: AddAttendanceModalProps) {
                                 <FormField
                                     key={worker.id}
                                     control={form.control}
-                                    name={`present_workers.${worker.id}`}
+                                    name={`present_workers.work_${worker.id}`}
                                     render={({ field }) => (
                                         <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-2">
                                             <FormControl>
                                                 <Checkbox
-                                                    checked={field.value}
+                                                    checked={!!field.value}
                                                     onCheckedChange={field.onChange}
                                                 />
                                             </FormControl>
