@@ -40,6 +40,7 @@ interface AddAttendanceModalProps {
 
 export function AddAttendanceModal({ projectId }: AddAttendanceModalProps) {
   const [open, setOpen] = useState(false);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const firestore = useFirestore();
   const { user } = useUser();
@@ -144,7 +145,7 @@ export function AddAttendanceModal({ projectId }: AddAttendanceModalProps) {
                       <FormItem>
                           <Label>Date</Label>
                            <div>
-                              <Popover>
+                              <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                                   <PopoverTrigger asChild>
                                   <Button
                                       variant={"outline"}
@@ -158,7 +159,10 @@ export function AddAttendanceModal({ projectId }: AddAttendanceModalProps) {
                                   <Calendar
                                       mode="single"
                                       selected={field.value}
-                                      onSelect={field.onChange}
+                                      onSelect={(date) => {
+                                        field.onChange(date);
+                                        setDatePickerOpen(false);
+                                      }}
                                       disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                                       initialFocus
                                   />
