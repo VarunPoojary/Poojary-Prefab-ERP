@@ -44,8 +44,10 @@ export interface Task {
   id: string;
   project_id: string;
   title: string;
+  description?: string;
   status: 'todo' | 'inprogress' | 'done';
   completion_photo_url: string;
+  expected_completion_date?: string;
 }
 
 export interface Attendance {

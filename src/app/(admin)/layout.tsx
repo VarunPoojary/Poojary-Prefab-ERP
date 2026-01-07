@@ -34,16 +34,13 @@ const adminMenuItems = [
   { href: '/admin/dashboard', label: 'Admin Dashboard', icon: Shield },
   { href: '/admin/workers', label: 'Workers & Payroll', icon: Users },
   { href: '/admin/transactions', label: 'Transactions', icon: ArrowLeftRight },
-  // Add other admin-specific links here
+  { href: '/admin/tasks', label: 'Tasks', icon: ClipboardCheck },
 ];
 
 const mainMenuItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/projects', label: 'Projects', icon: Briefcase },
   { href: '/dashboard/workers', label: 'Workers', icon: Users },
   { href: '/dashboard/transactions', label: 'Transactions', icon: ArrowLeftRight },
-  { href: '/dashboard/tasks', label: 'Tasks', icon: ClipboardCheck },
-  { href: '/dashboard/attendance', label: 'Attendance', icon: CalendarCheck },
   { href: '/dashboard/budget', label: 'Budget AI', icon: PieChart },
 ];
 
