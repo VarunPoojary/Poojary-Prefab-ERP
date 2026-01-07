@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useUser } from '@/firebase';
 import { collection, query, where, doc, getDoc } from 'firebase/firestore';
 import type { Project, User } from '@/types/schema';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeftRight, CalendarCheck, ClipboardCheck } from 'lucide-react';
 import Link from 'next/link';
+import { useMemoFirebase } from '@/firebase/provider';
 
 function ManagerProjectView({ projects, userRole }: { projects: Project[], userRole: User['role'] | null }) {
   if (userRole !== 'manager') {
@@ -51,7 +52,7 @@ function ManagerProjectView({ projects, userRole }: { projects: Project[], userR
                 <Button
                   key={action.label}
                   asChild
-                  variant="outline"
+                  variant="default"
                   size="sm"
                 >
                   <Link href={action.href}>
