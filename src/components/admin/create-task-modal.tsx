@@ -162,7 +162,7 @@ export function CreateTaskModal() {
                     name="expected_completion_date"
                     control={control}
                     render={({ field }) => (
-                    <Popover>
+                    <Popover modal={true}>
                         <PopoverTrigger asChild>
                         <Button
                             variant={"outline"}
