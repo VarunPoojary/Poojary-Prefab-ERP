@@ -13,13 +13,6 @@ import Link from 'next/link';
 function ManagerProjectView({ projects }: { projects: Project[] }) {
   const project = projects[0]; // For now, manager is assigned to one project
 
-  const actions = [
-    { href: `/dashboard/attendance`, label: 'Mark Attendance', icon: CalendarCheck },
-    { href: `/dashboard/tasks`, label: 'Manage Tasks', icon: ClipboardCheck },
-    { href: `/dashboard/transactions`, label: 'Add Expense', icon: ArrowLeftRight },
-    { href: `/dashboard/transactions`, label: 'Add Income', icon: DollarSign },
-  ];
-
   if (!project) {
     return (
       <Card>
@@ -29,6 +22,13 @@ function ManagerProjectView({ projects }: { projects: Project[] }) {
       </Card>
     );
   }
+
+  const actions = [
+    { href: `/dashboard/projects/${project.id}/attendance`, label: 'Mark Attendance', icon: CalendarCheck },
+    { href: `/dashboard/projects/${project.id}/tasks`, label: 'Manage Tasks', icon: ClipboardCheck },
+    { href: `/dashboard/projects/${project.id}/transactions/expense`, label: 'Add Expense', icon: ArrowLeftRight },
+    { href: `/dashboard/projects/${project.id}/transactions/income`, label: 'Add Income', icon: DollarSign },
+  ];
 
   return (
     <div className="space-y-6">
@@ -64,8 +64,6 @@ export default function ProjectsPage() {
 
   const projectsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    // This is the crucial fix: we are now using a 'where' clause to filter by the manager's UID.
-    // This ensures we only request data the manager is allowed to see.
     return query(collection(firestore, 'projects'), where('assigned_manager_id', '==', user.uid));
   }, [firestore, user]);
 

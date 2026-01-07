@@ -10,7 +10,7 @@ export interface User {
 
 export interface Project {
   id: string;
-  name: string;
+  name:string;
   location: string;
   budget_limit: number;
   assigned_manager_id: string;
@@ -44,7 +44,7 @@ export interface Task {
   id: string;
   project_id: string;
   title: string;
-  is_completed: boolean;
+  status: 'todo' | 'inprogress' | 'done';
   completion_photo_url: string;
 }
 

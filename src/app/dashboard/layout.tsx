@@ -34,8 +34,6 @@ const menuItems = [
   { href: '/dashboard/projects', label: 'Projects', icon: Briefcase },
   { href: '/dashboard/workers', label: 'Workers', icon: Users },
   { href: '/dashboard/transactions', label: 'Transactions', icon: ArrowLeftRight },
-  { href: '/dashboard/tasks', label: 'Tasks', icon: ClipboardCheck },
-  { href: '/dashboard/attendance', label: 'Attendance', icon: CalendarCheck },
   { href: '/dashboard/budget', label: 'Budget AI', icon: PieChart },
 ];
 

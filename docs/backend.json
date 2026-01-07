@@ -206,9 +206,10 @@
           "type": "string",
           "description": "The title of the task."
         },
-        "is_completed": {
-          "type": "boolean",
-          "description": "Indicates whether the task is completed."
+        "status": {
+          "type": "string",
+          "description": "The status of the task.",
+          "enum": ["todo", "inprogress", "done"]
         },
         "completion_photo_url": {
           "type": "string",
@@ -220,7 +221,7 @@
         "id",
         "project_id",
         "title",
-        "is_completed",
+        "status",
         "completion_photo_url"
       ]
     },
