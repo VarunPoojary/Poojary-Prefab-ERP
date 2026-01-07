@@ -145,7 +145,7 @@ export function AddAttendanceModal({ projectId }: AddAttendanceModalProps) {
                       <FormItem>
                           <Label>Date</Label>
                            <div>
-                              <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen} modal={true}>
+                              <Popover modal={true} open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                                   <PopoverTrigger asChild>
                                   <Button
                                       variant={"outline"}
