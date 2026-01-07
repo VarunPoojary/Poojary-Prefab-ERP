@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { UpdateTaskModal } from './update-task-modal';
 
 export function TaskList() {
   const firestore = useFirestore();
@@ -141,14 +142,16 @@ export function TaskList() {
               <TableBody>
                   {filteredTasks.length > 0 ? (
                   filteredTasks.map((task) => (
-                      <TableRow key={task.id}>
-                          <TableCell className="font-medium">{task.title}</TableCell>
-                          <TableCell>{projectsMap.get(task.project_id) || 'Unknown'}</TableCell>
-                          <TableCell>
-                            <Badge variant={getStatusVariant(task.status)}>{task.status}</Badge>
-                          </TableCell>
-                          <TableCell>{formatDate(task.expected_completion_date)}</TableCell>
-                      </TableRow>
+                      <UpdateTaskModal key={task.id} task={task} projects={projectData || []}>
+                        <TableRow className="cursor-pointer">
+                            <TableCell className="font-medium">{task.title}</TableCell>
+                            <TableCell>{projectsMap.get(task.project_id) || 'Unknown'}</TableCell>
+                            <TableCell>
+                                <Badge variant={getStatusVariant(task.status)}>{task.status}</Badge>
+                            </TableCell>
+                            <TableCell>{formatDate(task.expected_completion_date)}</TableCell>
+                        </TableRow>
+                      </UpdateTaskModal>
                   ))
                   ) : (
                   <TableRow>
