@@ -98,11 +98,14 @@ service cloud.firestore {
     }
 
     match /projects/{projectId}/tasks/{taskId} {
-      // Admins can create, update, and delete tasks.
-      allow write: if isAdmin();
+      // Admins can create and delete tasks.
+      allow create, delete: if isAdmin();
       
-      // Managers can read tasks for their assigned projects.
-      allow get, list: if isManager() && isAssignedManager(projectId);
+      // Admins and assigned managers can update tasks.
+      allow update: if isAdmin() || (isManager() && isAssignedManager(projectId));
+      
+      // Admins and assigned managers can read tasks.
+      allow get, list: if isAdmin() || (isManager() && isAssignedManager(projectId));
     }
   }
 }
