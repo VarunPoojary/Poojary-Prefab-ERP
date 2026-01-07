@@ -16,11 +16,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, writeBatch, query, where, getDocs } from 'firebase/firestore';
+import { collection, writeBatch, query, where, getDocs, doc } from 'firebase/firestore';
 import type { Worker } from '@/types/schema';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, CalendarIcon } from 'lucide-react';
@@ -83,7 +83,7 @@ export function AddAttendanceModal({ projectId }: AddAttendanceModalProps) {
 
     Object.entries(data.present_workers).forEach(([workerId, isPresent]) => {
       if (isPresent) {
-        const docRef = collection(attendanceCollection).doc();
+        const docRef = doc(attendanceCollection);
         batch.set(docRef, {
           project_id: projectId,
           worker_id: workerId,
