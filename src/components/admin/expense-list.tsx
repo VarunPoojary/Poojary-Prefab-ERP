@@ -46,10 +46,15 @@ export function ExpenseList() {
     }
     
     setIsLoading(true);
-    const expensesQuery = query(collectionGroup(firestore, 'transactions'), where('type', '==', 'expense'));
+    // Fetch all transactions from the collection group without filtering by type
+    const allTransactionsQuery = query(collectionGroup(firestore, 'transactions'));
     
-    const unsubscribe = onSnapshot(expensesQuery, (snapshot) => {
-        const allExpenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), project_id: doc.ref.parent.parent?.id } as Transaction));
+    const unsubscribe = onSnapshot(allTransactionsQuery, (snapshot) => {
+        // Filter for expenses on the client-side
+        const allExpenses = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data(), project_id: doc.ref.parent.parent?.id } as Transaction))
+            .filter(t => t.type === 'expense');
+
         allExpenses.sort((a, b) => {
            const dateA = a.timestamp && (a.timestamp as any).toDate ? (a.timestamp as any).toDate() : new Date(a.timestamp as string);
            const dateB = b.timestamp && (b.timestamp as any).toDate ? (b.timestamp as any).toDate() : new Date(b.timestamp as string);

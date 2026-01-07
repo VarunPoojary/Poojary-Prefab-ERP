@@ -56,9 +56,12 @@ export function TransactionList({ types }: TransactionListProps) {
     const fetchTransactions = async () => {
       setIsLoading(true);
       try {
-        const transactionsQuery = query(collectionGroup(firestore, 'transactions'), where('type', 'in', types));
-        const snapshot = await getDocs(transactionsQuery);
-        const allTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
+        const allTransactionsQuery = query(collectionGroup(firestore, 'transactions'));
+        const snapshot = await getDocs(allTransactionsQuery);
+        
+        const allTransactions = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() } as Transaction))
+            .filter(t => types.includes(t.type));
         
         allTransactions.sort((a, b) => {
            const dateA = a.timestamp && (a.timestamp as any).toDate ? (a.timestamp as any).toDate() : new Date(a.timestamp as string);
