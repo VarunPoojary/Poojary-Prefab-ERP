@@ -78,7 +78,7 @@ service cloud.firestore {
         // Admins can get any record. Managers can get records for their assigned projects.
         allow get: if isAdmin() || (isManager() && isAssignedManager(resource.data.project_id));
         
-        // Admins can list all records. Managers can only list records for projects they are assigned to.
+        // Admins can list all records. Managers must filter by project_id.
         allow list: if isAdmin() || (isManager() && request.query.project_id == resource.data.project_id);
         
         // Managers can create attendance records for their projects.
@@ -88,24 +88,14 @@ service cloud.firestore {
         allow update, delete: if isAdmin();
     }
     
-    // This rule allows admins to perform collection group queries on 'attendance'
-    match /{path=**}/attendance/{attendanceId} {
-        allow list: if isAdmin();
-    }
-
-    // This rule allows admins to perform collection group queries on 'tasks'.
-    match /{path=**}/tasks/{taskId} {
-      allow read: if isAdmin();
-    }
-    
     match /transactions/{transactionId} {
       // Only admins can manage global transactions
-      allow read, write, delete: if isAdmin();
+      allow read, write: if isAdmin();
     }
     
     // This rule allows admins to perform collection group queries on 'transactions'.
     match /{path=**}/transactions/{transactionId} {
-      allow list: if isAdmin();
+      allow list, read, update: if isAdmin();
     }
 
     match /projects/{projectId}/transactions/{transactionId} {
@@ -115,8 +105,8 @@ service cloud.firestore {
       // Managers can create transactions for their projects.
       allow create: if isManager() && isAssignedManager(projectId);
       
-      // Only admins can delete transactions. Updates are not allowed for managers on this path.
-      allow update: if false; 
+      // Only admins can delete transactions. Managers cannot update approved transactions.
+      allow update: if isAdmin();
       allow delete: if isAdmin();
     }
 
@@ -129,6 +119,11 @@ service cloud.firestore {
       
       // Admins and assigned managers can read tasks.
       allow get, list: if isAdmin() || (isManager() && isAssignedManager(projectId));
+    }
+
+     // This rule allows admins to perform collection group queries on 'attendance'
+    match /{path=**}/attendance/{attendanceId} {
+        allow list: if isAdmin();
     }
   }
 }
