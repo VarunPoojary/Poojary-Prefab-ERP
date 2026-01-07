@@ -51,12 +51,15 @@ service cloud.firestore {
     }
 
     match /projects/{projectId} {
-      // Admins can read all projects. Managers can only read projects they are assigned to.
-      allow get: if isAdmin() || (isManager() && isAssignedManager(projectId));
-      allow list: if isAdmin();
-      
-      // Only admins can create, update, or delete projects.
+      // Admins can perform any action on projects.
       allow write: if isAdmin();
+      
+      // Admins can get any project. Managers can only get projects they are assigned to.
+      allow get: if isAdmin() || (isManager() && isAssignedManager(projectId));
+
+      // Only admins are allowed to list all projects.
+      // Managers must use a query with a 'where' clause on 'assigned_manager_id'.
+      allow list: if isAdmin();
     }
     
     match /workers/{workerId} {
@@ -71,8 +74,6 @@ service cloud.firestore {
         allow read: if isAdmin() || (isManager() && isAssignedManager(resource.data.project_id));
         
         // Managers can create attendance records for their projects.
-        // Critical: The rule to prevent duplicate records for a worker on the same date needs to be handled
-        // via a Firestore transaction in the application code, as security rules cannot query across documents.
         allow create: if isManager() && isAssignedManager(request.resource.data.project_id);
 
         // Only admins can update or delete records.

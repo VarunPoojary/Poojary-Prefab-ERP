@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, Briefcase } from 'lucide-react';
 import { ProjectList } from '@/components/admin/project-list';
 import { CreateProjectModal } from '@/components/admin/create-project-modal';
-import { useCollection } from '@/firebase';
-import { collection, query, getDocs, collectionGroup } from 'firebase/firestore';
+import { useCollection, useUser } from '@/firebase';
+import { collection, query, getDocs, collectionGroup, doc, getDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { useEffect, useState, useMemo } from 'react';
-import type { Project, Transaction } from '@/types/schema';
+import type { Project, Transaction, User } from '@/types/schema';
 import { Skeleton } from '@/components/ui/skeleton';
 
 function AdminStats() {
@@ -86,6 +86,30 @@ function AdminStats() {
 
 
 export default function AdminDashboardPage() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const [userRole, setUserRole] = useState<User['role'] | null>(null);
+
+  useEffect(() => {
+    if (user && firestore) {
+      const userDocRef = doc(firestore, 'users', user.uid);
+      getDoc(userDocRef).then((doc) => {
+        if (doc.exists()) {
+          setUserRole((doc.data() as User).role);
+        }
+      });
+    }
+  }, [user, firestore]);
+
+  if (!userRole || userRole !== 'admin') {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p>You do not have permission to view this page.</p>
+      </div>
+    );
+  }
+
+
   return (
     <>
       <div className="flex items-center justify-between">

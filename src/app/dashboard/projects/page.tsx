@@ -3,14 +3,24 @@
 import { useMemo } from 'react';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import type { Project } from '@/types/schema';
+import type { Project, User } from '@/types/schema';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeftRight, CalendarCheck, ClipboardCheck, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 
-function ManagerProjectView({ projects }: { projects: Project[] }) {
+function ManagerProjectView({ projects, userRole }: { projects: Project[], userRole: User['role'] | null }) {
+  if (userRole !== 'manager') {
+     return (
+      <Card>
+        <CardContent className="pt-6">
+          <p>You do not have manager permissions.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   if (projects.length === 0) {
     return (
       <Card>
@@ -62,15 +72,28 @@ function ManagerProjectView({ projects }: { projects: Project[] }) {
 export default function ProjectsPage() {
   const firestore = useFirestore();
   const { user } = useUser();
+  const [userRole, setUserRole] = React.useState<User['role'] | null>(null);
+
+  // Fetch user role
+  React.useEffect(() => {
+    if (user && firestore) {
+      const userDocRef = doc(firestore, 'users', user.uid);
+      getDoc(userDocRef).then(doc => {
+        if (doc.exists()) {
+          setUserRole((doc.data() as User).role);
+        }
+      });
+    }
+  }, [user, firestore]);
 
   const projectsQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
+    if (!user || !firestore || userRole !== 'manager') return null;
     return query(collection(firestore, 'projects'), where('assigned_manager_id', '==', user.uid));
-  }, [firestore, user]);
+  }, [firestore, user, userRole]);
 
   const { data: projects, isLoading } = useCollection<Project>(projectsQuery);
 
-  if (isLoading) {
+  if (isLoading || !userRole) {
     return (
       <div className="space-y-4">
         <h1 className="text-lg font-semibold md:text-2xl font-headline">My Projects</h1>
@@ -85,7 +108,7 @@ export default function ProjectsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold md:text-2xl font-headline">My Projects</h1>
       </div>
-      <ManagerProjectView projects={projects || []} />
+      <ManagerProjectView projects={projects || []} userRole={userRole} />
     </>
   );
 }
