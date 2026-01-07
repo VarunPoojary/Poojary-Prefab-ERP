@@ -11,49 +11,50 @@ import { ArrowLeftRight, CalendarCheck, ClipboardCheck, DollarSign } from 'lucid
 import Link from 'next/link';
 
 function ManagerProjectView({ projects }: { projects: Project[] }) {
-  const project = projects[0]; // For now, manager is assigned to one project
-
-  if (!project) {
+  if (projects.length === 0) {
     return (
       <Card>
-          <CardContent className="pt-6">
+        <CardContent className="pt-6">
           <p>You have not been assigned to any projects yet. Please contact an administrator.</p>
-          </CardContent>
+        </CardContent>
       </Card>
     );
   }
 
-  const actions = [
-    { href: `/dashboard/projects/${project.id}/attendance`, label: 'Mark Attendance', icon: CalendarCheck },
-    { href: `/dashboard/projects/${project.id}/tasks`, label: 'Manage Tasks', icon: ClipboardCheck },
-    { href: `/dashboard/projects/${project.id}/transactions/expense`, label: 'Add Expense', icon: ArrowLeftRight },
-    { href: `/dashboard/projects/${project.id}/transactions/income`, label: 'Add Income', icon: DollarSign },
+  const actions = (projectId: string) => [
+    { href: `/dashboard/projects/${projectId}/attendance`, label: 'Mark Attendance', icon: CalendarCheck },
+    { href: `/dashboard/projects/${projectId}/tasks`, label: 'Manage Tasks', icon: ClipboardCheck },
+    { href: `/dashboard/projects/${projectId}/transactions/expense`, label: 'Add Expense', icon: ArrowLeftRight },
+    { href: `/dashboard/projects/${projectId}/transactions/income`, label: 'Add Income', icon: DollarSign },
   ];
 
   return (
     <div className="space-y-6">
-       <Card>
-            <CardHeader>
-                <CardTitle>{project.name}</CardTitle>
-                <CardDescription>{project.location}</CardDescription>
-            </CardHeader>
-       </Card>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {actions.map((action) => (
-          <Button
-            key={action.label}
-            asChild
-            variant="outline"
-            className="h-24 flex-col gap-2 text-base"
-          >
-            <Link href={action.href}>
-              <action.icon className="h-6 w-6" />
-              {action.label}
-            </Link>
-          </Button>
-        ))}
-      </div>
+      {projects.map((project) => (
+        <Card key={project.id}>
+          <CardHeader>
+            <CardTitle>{project.name}</CardTitle>
+            <CardDescription>{project.location}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {actions(project.id).map((action) => (
+                <Button
+                  key={action.label}
+                  asChild
+                  variant="outline"
+                  className="h-24 flex-col gap-2 text-base"
+                >
+                  <Link href={action.href}>
+                    <action.icon className="h-6 w-6" />
+                    {action.label}
+                  </Link>
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }
@@ -71,25 +72,20 @@ export default function ProjectsPage() {
 
   if (isLoading) {
     return (
-        <div className="space-y-4">
-            <h1 className="text-lg font-semibold md:text-2xl font-headline">My Project</h1>
-            <Skeleton className="h-24 w-full" />
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="h-24 w-full" />
-            </div>
-        </div>
+      <div className="space-y-4">
+        <h1 className="text-lg font-semibold md:text-2xl font-headline">My Projects</h1>
+        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-48 w-full" />
+      </div>
     );
   }
 
   return (
     <>
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl font-headline">My Project</h1>
+        <h1 className="text-lg font-semibold md:text-2xl font-headline">My Projects</h1>
       </div>
-       <ManagerProjectView projects={projects || []} />
+      <ManagerProjectView projects={projects || []} />
     </>
   );
 }
