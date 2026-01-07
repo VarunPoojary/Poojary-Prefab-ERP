@@ -58,11 +58,9 @@ export function RecordPaymentModal({ worker }: RecordPaymentModalProps) {
     }
 
     const workerRef = doc(firestore, 'workers', worker.id);
-    // Use the new subcollection path
     const transactionsCollectionRef = collection(firestore, `workers/${worker.id}/transactions`);
     
     try {
-      // Use a transaction to ensure balance update and transaction record are atomic.
       await runTransaction(firestore, async (transaction) => {
         const workerDoc = await transaction.get(workerRef);
         if (!workerDoc.exists()) {
@@ -72,11 +70,9 @@ export function RecordPaymentModal({ worker }: RecordPaymentModalProps) {
         const currentBalance = workerDoc.data().current_balance;
         const newBalance = currentBalance - data.amount;
         
-        // 1. Update worker's balance
         transaction.update(workerRef, { current_balance: newBalance });
         
-        // 2. Create the transaction record in the worker's subcollection
-        const newTransactionRef = doc(transactionsCollectionRef); // Create a new doc reference in the subcollection
+        const newTransactionRef = doc(transactionsCollectionRef); 
         transaction.set(newTransactionRef, {
             type: 'payout_settlement',
             amount: data.amount,
@@ -85,7 +81,7 @@ export function RecordPaymentModal({ worker }: RecordPaymentModalProps) {
             worker_id: worker.id,
             timestamp: serverTimestamp(),
             created_by: user.uid,
-            status: 'approved' // Admin payroll payments are auto-approved
+            status: 'approved'
         });
       });
       
@@ -155,5 +151,3 @@ export function RecordPaymentModal({ worker }: RecordPaymentModalProps) {
     </Dialog>
   );
 }
-
-    

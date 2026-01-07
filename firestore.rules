@@ -95,9 +95,14 @@ service cloud.firestore {
       allow read: if isAdmin();
     }
     
+    match /transactions/{transactionId} {
+      // Only admins can manage global transactions
+      allow read, write, delete: if isAdmin();
+    }
+    
     // This rule allows admins to perform collection group queries on 'transactions'.
     match /{path=**}/transactions/{transactionId} {
-      allow list, read, update: if isAdmin();
+      allow list: if isAdmin();
     }
 
     match /projects/{projectId}/transactions/{transactionId} {

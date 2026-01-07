@@ -73,10 +73,8 @@ function PayrollHistory({ workerId }: { workerId: string }) {
     
     const transactionsQuery = useMemoFirebase(() => {
         if (!workerId || !firestore) return null;
-        // Query the top-level transactions collection for all payments to this worker
         return query(
-            collection(firestore, 'transactions'),
-            where('worker_id', '==', workerId),
+            collection(firestore, `workers/${workerId}/transactions`),
             orderBy('timestamp', 'desc')
         );
     }, [firestore, workerId]);
