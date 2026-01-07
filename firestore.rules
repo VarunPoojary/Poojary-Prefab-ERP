@@ -80,6 +80,12 @@ service cloud.firestore {
         allow update, delete: if isAdmin();
     }
     
+    // Global payroll transactions collection
+    match /transactions/{transactionId} {
+        // Only admins can manage global transactions
+        allow read, write: if isAdmin();
+    }
+
     // This rule allows admins to perform collection group queries on 'attendance'
     match /{path=**}/attendance/{attendanceId} {
         allow list: if isAdmin();

@@ -75,32 +75,54 @@ function PayrollHistory({ workerId }: { workerId: string }) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (!firestore) return;
+        if (!firestore || !workerId) return;
 
         const fetchPayrollData = async () => {
             setIsLoading(true);
-            
-            // 1. Fetch all projects to create a name map
-            const projectsQuery = query(collection(firestore, 'projects'));
-            const projectSnapshots = await getDocs(projectsQuery);
-            const pMap = new Map(projectSnapshots.docs.map(doc => [doc.id, (doc.data() as Project).name]));
-            setProjectsMap(pMap);
+            try {
+                // 1. Fetch all projects to create a name map
+                const projectsQuery = query(collection(firestore, 'projects'));
+                const projectSnapshots = await getDocs(projectsQuery);
+                const pMap = new Map(projectSnapshots.docs.map(doc => [doc.id, (doc.data() as Project).name]));
+                setProjectsMap(pMap);
 
-            // 2. Fetch all transactions for the worker across all projects
-            const allWorkerTransactionsQuery = query(
-                collectionGroup(firestore, 'transactions'),
-                where('worker_id', '==', workerId)
-            );
-            const allTxsSnapshot = await getDocs(allWorkerTransactionsQuery);
-            
-            // 3. Filter for payroll-related transactions on the client side
-            const payrollTxs = allTxsSnapshot.docs
-                .map(doc => doc.data() as Transaction)
-                .filter(tx => tx.type === 'payout_settlement' || tx.type === 'payout_advance');
+                // 2. Fetch project-specific transactions for the worker
+                const projectTxsQuery = query(
+                    collectionGroup(firestore, 'transactions'),
+                    where('worker_id', '==', workerId)
+                );
 
-            setTransactions(payrollTxs);
-            
-            setIsLoading(false);
+                // 3. Fetch global, non-project-specific transactions for the worker
+                const globalTxsQuery = query(
+                    collection(firestore, 'transactions'),
+                    where('worker_id', '==', workerId)
+                );
+
+                const [projectTxsSnapshot, globalTxsSnapshot] = await Promise.all([
+                    getDocs(projectTxsQuery),
+                    getDocs(globalTxsQuery)
+                ]);
+
+                // 4. Combine and filter for payroll-related transactions
+                const allTxs = [
+                    ...projectTxsSnapshot.docs.map(doc => doc.data() as Transaction),
+                    ...globalTxsSnapshot.docs.map(doc => doc.data() as Transaction)
+                ];
+
+                const payrollTxs = allTxs.filter(tx => tx.type === 'payout_settlement' || tx.type === 'payout_advance');
+                
+                payrollTxs.sort((a, b) => {
+                    const dateA = a.timestamp && (a.timestamp as any).toDate ? (a.timestamp as any).toDate() : new Date(a.timestamp as string);
+                    const dateB = b.timestamp && (b.timestamp as any).toDate ? (b.timestamp as any).toDate() : new Date(b.timestamp as string);
+                    return dateB.getTime() - dateA.getTime();
+                });
+
+                setTransactions(payrollTxs);
+            } catch (error) {
+                console.error("Error fetching payroll data:", error);
+            } finally {
+                setIsLoading(false);
+            }
         };
 
         fetchPayrollData();
@@ -135,10 +157,10 @@ function PayrollHistory({ workerId }: { workerId: string }) {
                     </TableHeader>
                     <TableBody>
                         {transactions && transactions.length > 0 ? (
-                            transactions.map(tx => (
-                                <TableRow key={tx.id}>
+                            transactions.map((tx, index) => (
+                                <TableRow key={tx.id || index}>
                                     <TableCell>{formatDate(tx.timestamp)}</TableCell>
-                                    <TableCell>{projectsMap.get(tx.project_id) || 'N/A'}</TableCell>
+                                    <TableCell>{tx.project_id ? projectsMap.get(tx.project_id) : 'General Payroll'}</TableCell>
                                     <TableCell><Badge variant="secondary" className="capitalize">{tx.type.replace('_', ' ')}</Badge></TableCell>
                                     <TableCell className="font-medium">${tx.amount.toLocaleString()}</TableCell>
                                 </TableRow>

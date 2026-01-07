@@ -29,7 +29,7 @@ export interface Worker {
 
 export interface Transaction {
   id: string;
-  project_id: string;
+  project_id?: string;
   type: 'expense' | 'income' | 'payout_advance' | 'payout_settlement';
   amount: number;
   category: string;

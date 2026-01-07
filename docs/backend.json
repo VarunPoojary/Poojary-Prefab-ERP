@@ -138,7 +138,7 @@
         },
         "project_id": {
           "type": "string",
-          "description": "Reference to Project."
+          "description": "Optional reference to a Project."
         },
         "type": {
           "type": "string",
@@ -183,7 +183,6 @@
       },
       "required": [
         "id",
-        "project_id",
         "type",
         "amount",
         "category",
@@ -317,6 +316,16 @@
             "$ref": "#/backend/entities/Transaction"
           },
           "description": "Stores transactions associated with a project."
+        }
+      },
+       {
+        "path": "/transactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Stores global transactions not associated with a specific project (e.g., admin payroll)."
         }
       },
       {
