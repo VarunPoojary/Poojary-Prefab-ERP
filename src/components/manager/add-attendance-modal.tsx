@@ -31,7 +31,13 @@ const attendanceSchema = z.object({
   date: z.date({
     required_error: "A date is required.",
   }),
-  present_workers: z.record(z.boolean()),
+  present_workers: z.record(z.boolean()).refine(
+    (workers) => Object.values(workers).some((isPresent) => isPresent),
+    {
+      message: "You must select at least one worker.",
+      path: ["present_workers"],
+    }
+  ),
 });
 
 interface AddAttendanceModalProps {
@@ -160,7 +166,7 @@ export function AddAttendanceModal({ projectId }: AddAttendanceModalProps) {
                                       mode="single"
                                       selected={field.value}
                                       onSelect={(date) => {
-                                        field.onChange(date);
+                                        if (date) field.onChange(date);
                                         setDatePickerOpen(false);
                                       }}
                                       disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
@@ -203,6 +209,7 @@ export function AddAttendanceModal({ projectId }: AddAttendanceModalProps) {
                             ))
                         }
                     </ScrollArea>
+                    <FormMessage>{form.formState.errors.present_workers?.message}</FormMessage>
                 </div>
             </div>
             <DialogFooter>
