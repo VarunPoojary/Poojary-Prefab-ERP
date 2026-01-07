@@ -105,8 +105,8 @@ function PayrollHistory({ workerId }: { workerId: string }) {
 
                 // 4. Combine and filter for payroll-related transactions
                 const allTxs = [
-                    ...projectTxsSnapshot.docs.map(doc => doc.data() as Transaction),
-                    ...globalTxsSnapshot.docs.map(doc => doc.data() as Transaction)
+                    ...projectTxsSnapshot.docs.map(doc => ({...doc.data(), id: doc.id} as Transaction)),
+                    ...globalTxsSnapshot.docs.map(doc => ({...doc.data(), id: doc.id} as Transaction))
                 ];
 
                 const payrollTxs = allTxs.filter(tx => tx.type === 'payout_settlement' || tx.type === 'payout_advance');
@@ -286,5 +286,3 @@ export default function WorkerDetailPage() {
         </div>
     );
 }
-
-    
