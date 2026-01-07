@@ -79,6 +79,11 @@ service cloud.firestore {
         // Only admins can update or delete records.
         allow update, delete: if isAdmin();
     }
+    
+    // This rule allows admins to perform collection group queries on 'attendance'
+    match /{path=**}/attendance/{attendanceId} {
+        allow list: if isAdmin();
+    }
 
     // This rule allows admins to perform collection group queries on 'tasks'.
     match /{path=**}/tasks/{taskId} {
@@ -87,7 +92,7 @@ service cloud.firestore {
     
     // This rule allows admins to perform collection group queries on 'transactions'.
     match /{path=**}/transactions/{transactionId} {
-      allow read, update: if isAdmin();
+      allow list, read, update: if isAdmin();
     }
 
     match /projects/{projectId}/transactions/{transactionId} {

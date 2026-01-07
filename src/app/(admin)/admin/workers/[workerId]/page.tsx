@@ -1,10 +1,11 @@
 
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Worker, Transaction, Attendance, Project } from '@/types/schema';
-import { doc, collection, query, where, collectionGroup } from 'firebase/firestore';
+import { doc, collection, query, where, collectionGroup, getDocs } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import { UpdateWorkerModal } from '@/components/admin/update-worker-modal';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
+import { useMemo, useEffect, useState } from 'react';
 
 function WorkerHeader({ worker, isLoading }: { worker: Worker | null, isLoading: boolean }) {
     if (isLoading || !worker) {
@@ -70,24 +72,37 @@ function WorkerDetails({ worker, isLoading }: { worker: Worker | null, isLoading
 
 function PayrollHistory({ workerId }: { workerId: string }) {
     const firestore = useFirestore();
-    
-    const payrollQuery = useMemoFirebase(() => {
-        if (!workerId) return null;
-        return query(
-            collectionGroup(firestore, 'transactions'),
-            where('worker_id', '==', workerId),
-            where('type', 'in', ['payout_settlement', 'payout_advance'])
-        );
-    }, [firestore, workerId]);
-    
-    const { data: transactions, isLoading } = useCollection<Transaction>(payrollQuery);
-     const projectsQuery = useMemoFirebase(() => query(collection(firestore, 'projects')), [firestore]);
-    const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [projectsMap, setProjectsMap] = useState<Map<string, string>>(new Map());
+    const [isLoading, setIsLoading] = useState(true);
 
-    const projectsMap = useMemoFirebase(() => {
-        if (!projects) return new Map();
-        return new Map(projects.map(p => [p.id, p.name]));
-    }, [projects]);
+    useEffect(() => {
+        if (!firestore) return;
+
+        const fetchPayrollData = async () => {
+            setIsLoading(true);
+            
+            // 1. Fetch all projects to create a name map
+            const projectsQuery = query(collection(firestore, 'projects'));
+            const projectSnapshots = await getDocs(projectsQuery);
+            const pMap = new Map(projectSnapshots.docs.map(doc => [doc.id, (doc.data() as Project).name]));
+            setProjectsMap(pMap);
+
+            // 2. Fetch payroll transactions for the worker
+            const payrollQuery = query(
+                collectionGroup(firestore, 'transactions'),
+                where('worker_id', '==', workerId),
+                where('type', 'in', ['payout_settlement', 'payout_advance'])
+            );
+            const payrollSnapshots = await getDocs(payrollQuery);
+            const txs = payrollSnapshots.docs.map(doc => doc.data() as Transaction);
+            setTransactions(txs);
+            
+            setIsLoading(false);
+        };
+
+        fetchPayrollData();
+    }, [firestore, workerId]);
 
 
     const formatDate = (timestamp: any) => {
@@ -96,7 +111,7 @@ function PayrollHistory({ workerId }: { workerId: string }) {
         return format(date, 'MMM d, yyyy');
     };
     
-     if (isLoading || projectsLoading) {
+     if (isLoading) {
         return <Skeleton className="h-40 w-full" />;
     }
 
@@ -149,6 +164,7 @@ function AttendanceHistory({ workerId }: { workerId: string }) {
     }, [firestore, workerId]);
 
     const { data: attendances, isLoading } = useCollection<Attendance>(attendanceQuery);
+    
     const projectsQuery = useMemoFirebase(() => query(collection(firestore, 'projects')), [firestore]);
     const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
 
