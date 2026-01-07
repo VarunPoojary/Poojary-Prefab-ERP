@@ -87,6 +87,7 @@ export default function ProjectsPage() {
   }, [user, firestore]);
 
   const projectsQuery = useMemoFirebase(() => {
+    // CRITICAL FIX: Do not run the query until the user's role is confirmed to be 'manager'.
     if (!user || !firestore || userRole !== 'manager') return null;
     return query(collection(firestore, 'projects'), where('assigned_manager_id', '==', user.uid));
   }, [firestore, user, userRole]);
