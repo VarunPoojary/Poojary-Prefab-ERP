@@ -34,10 +34,11 @@ export interface Transaction {
   amount: number;
   category: string;
   description: string;
-  proof_image_url: string;
+  proof_image_url?: string;
   worker_id?: string;
   timestamp: Timestamp | Date | string;
   created_by: string;
+  status: 'unapproved' | 'approved' | 'rejected';
 }
 
 export interface Task {
