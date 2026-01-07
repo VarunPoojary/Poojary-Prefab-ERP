@@ -71,26 +71,17 @@ function WorkerDetails({ worker, isLoading }: { worker: Worker | null, isLoading
 function PayrollHistory({ workerId }: { workerId: string }) {
     const firestore = useFirestore();
     
-    // Query for project-specific advances
-    const advancesQuery = useMemoFirebase(() => {
-        if (!workerId) return null;
+    const transactionsQuery = useMemoFirebase(() => {
+        if (!workerId || !firestore) return null;
+        // Query the top-level transactions collection for all payments to this worker
         return query(
-            collectionGroup(firestore, 'transactions'),
+            collection(firestore, 'transactions'),
             where('worker_id', '==', workerId),
-            where('type', '==', 'payout_advance')
+            orderBy('timestamp', 'desc')
         );
     }, [firestore, workerId]);
-    const { data: advances, isLoading: advancesLoading } = useCollection<Transaction>(advancesQuery);
 
-    // Query for settlement payments from the worker's subcollection
-    const settlementsQuery = useMemoFirebase(() => {
-        if (!workerId) return null;
-        return query(
-             collection(firestore, `workers/${workerId}/transactions`),
-             where('type', '==', 'payout_settlement')
-        );
-    }, [firestore, workerId]);
-    const { data: settlements, isLoading: settlementsLoading } = useCollection<Transaction>(settlementsQuery);
+    const { data: transactions, isLoading: transactionsLoading } = useCollection<Transaction>(transactionsQuery);
 
     const [projectsMap, setProjectsMap] = useState<Map<string, string>>(new Map());
     const [projectsMapLoading, setProjectsMapLoading] = useState(true);
@@ -108,16 +99,6 @@ function PayrollHistory({ workerId }: { workerId: string }) {
         fetchProjects();
     }, [firestore]);
     
-    const transactions = useMemo(() => {
-        const combined = [...(advances || []), ...(settlements || [])];
-        combined.sort((a, b) => {
-            const dateA = a.timestamp && (a.timestamp as any).toDate ? (a.timestamp as any).toDate() : new Date(a.timestamp as string);
-            const dateB = b.timestamp && (b.timestamp as any).toDate ? (b.timestamp as any).toDate() : new Date(b.timestamp as string);
-            return dateB.getTime() - dateA.getTime();
-        });
-        return combined;
-    }, [advances, settlements]);
-
 
     const formatDate = (timestamp: any) => {
         if (!timestamp) return 'N/A';
@@ -125,7 +106,7 @@ function PayrollHistory({ workerId }: { workerId: string }) {
         return format(date, 'MMM d, yyyy');
     };
     
-     if (advancesLoading || settlementsLoading || projectsMapLoading) {
+     if (transactionsLoading || projectsMapLoading) {
         return <Skeleton className="h-40 w-full" />;
     }
 
