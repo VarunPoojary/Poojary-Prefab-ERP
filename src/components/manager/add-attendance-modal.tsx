@@ -25,7 +25,7 @@ import type { Worker } from '@/types/schema';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
-import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 
 const attendanceSchema = z.object({
   date: z.date({
@@ -138,35 +138,37 @@ export function AddAttendanceModal({ projectId }: AddAttendanceModalProps) {
             <form onSubmit={form.handleSubmit(onSubmit)}>
             <div className="grid gap-4 py-4">
                 <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                        <Label>Date</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                            <Button
-                                variant={"outline"}
-                                className="justify-start text-left font-normal"
-                            >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                            </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                            <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                                initialFocus
-                            />
-                            </PopoverContent>
-                        </Popover>
-                        {form.formState.errors.date && <p className="text-sm font-medium text-destructive">{form.formState.errors.date.message}</p>}
-                    </FormItem>
-                )}
-                />
+                  control={form.control}
+                  name="date"
+                  render={({ field }) => (
+                      <FormItem>
+                          <Label>Date</Label>
+                           <div>
+                              <Popover>
+                                  <PopoverTrigger asChild>
+                                  <Button
+                                      variant={"outline"}
+                                      className="justify-start text-left font-normal w-full"
+                                  >
+                                      <CalendarIcon className="mr-2 h-4 w-4" />
+                                      {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                  </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0">
+                                  <Calendar
+                                      mode="single"
+                                      selected={field.value}
+                                      onSelect={field.onChange}
+                                      disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                                      initialFocus
+                                  />
+                                  </PopoverContent>
+                              </Popover>
+                          </div>
+                          <FormMessage />
+                      </FormItem>
+                  )}
+                  />
 
                 <div className="space-y-2">
                     <Label>Workers</Label>
