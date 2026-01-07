@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, doc, deleteDoc, getDocs } from 'firebase/firestore';
+import { collection, query, doc, deleteDoc, getDocs, where, collectionGroup } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Transaction, Project } from '@/types/schema';
 import {
@@ -31,7 +31,11 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
-export function TransactionList() {
+interface TransactionListProps {
+    types: Transaction['type'][];
+}
+
+export function TransactionList({ types }: TransactionListProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
   
@@ -43,47 +47,36 @@ export function TransactionList() {
   const projectsQuery = useMemoFirebase(() => query(collection(firestore, 'projects')), [firestore]);
   const { data: projectData, isLoading: projectsLoading, error: projectsError } = useCollection<Project>(projectsQuery);
 
-  useEffect(() => {
-    if (projectsLoading) {
-      setIsLoading(true);
-      return;
-    }
-    if (projectsError) {
-      setError(projectsError);
-      setIsLoading(false);
-      return;
-    }
-    if (projectData) {
-      const newProjectsMap = new Map(projectData.map(p => [p.id, p.name]));
-      setProjectsMap(newProjectsMap);
+   useEffect(() => {
+    if (!firestore || !projectData) return;
 
-      const fetchTransactions = async () => {
-        setIsLoading(true);
-        try {
-          const allTransactions: Transaction[] = [];
-          for (const project of projectData) {
-            const transactionsColRef = collection(firestore, `projects/${project.id}/transactions`);
-            const transactionSnapshot = await getDocs(transactionsColRef);
-            transactionSnapshot.forEach(doc => {
-              allTransactions.push({ id: doc.id, ...doc.data() } as Transaction);
-            });
-          }
-          // Sort transactions by timestamp, newest first
-          allTransactions.sort((a, b) => {
-             const dateA = a.timestamp && (a.timestamp as any).toDate ? (a.timestamp as any).toDate() : new Date(a.timestamp as string);
-             const dateB = b.timestamp && (b.timestamp as any).toDate ? (b.timestamp as any).toDate() : new Date(b.timestamp as string);
-             return dateB.getTime() - dateA.getTime();
-          });
-          setTransactions(allTransactions);
-        } catch (e) {
-          setError(e as Error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchTransactions();
-    }
-  }, [projectData, projectsLoading, projectsError, firestore]);
+    const newProjectsMap = new Map(projectData.map(p => [p.id, p.name]));
+    setProjectsMap(newProjectsMap);
+
+    const fetchTransactions = async () => {
+      setIsLoading(true);
+      try {
+        const transactionsQuery = query(collectionGroup(firestore, 'transactions'), where('type', 'in', types));
+        const snapshot = await getDocs(transactionsQuery);
+        const allTransactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
+        
+        allTransactions.sort((a, b) => {
+           const dateA = a.timestamp && (a.timestamp as any).toDate ? (a.timestamp as any).toDate() : new Date(a.timestamp as string);
+           const dateB = b.timestamp && (b.timestamp as any).toDate ? (b.timestamp as any).toDate() : new Date(b.timestamp as string);
+           return dateB.getTime() - dateA.getTime();
+        });
+        setTransactions(allTransactions);
+      } catch (e) {
+        console.error("Error fetching transactions: ", e);
+        setError(e as Error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [firestore, types, projectData]);
+
 
   const handleDelete = async (transaction: Transaction) => {
     if (!transaction.project_id) {
@@ -105,7 +98,7 @@ export function TransactionList() {
       return projectsMap.get(projectId) || 'Unknown Project';
   }
 
-  if (isLoading) {
+  if (isLoading || projectsLoading) {
     return (
       <div className="space-y-2">
         {[...Array(5)].map((_, i) => (
@@ -115,8 +108,8 @@ export function TransactionList() {
     );
   }
 
-  if (error) {
-    return <p className="text-destructive">Error loading transactions: {error.message}</p>;
+  if (error || projectsError) {
+    return <p className="text-destructive">Error loading data: {error?.message || projectsError?.message}</p>;
   }
 
   const getVariantForType = (type: Transaction['type']) => {
@@ -154,7 +147,7 @@ export function TransactionList() {
                 transactions.map((transaction) => (
                     <TableRow key={transaction.id} >
                         <TableCell>
-                            <Badge variant={getVariantForType(transaction.type)}>{transaction.type}</Badge>
+                            <Badge variant={getVariantForType(transaction.type)}>{transaction.type.replace('_', ' ')}</Badge>
                         </TableCell>
                         <TableCell className="font-medium">${transaction.amount.toLocaleString()}</TableCell>
                         <TableCell>{transaction.category}</TableCell>
@@ -186,8 +179,8 @@ export function TransactionList() {
                 ))
                 ) : (
                 <TableRow>
-                    <TableCell colSpan={6} className="text-center">
-                    No transactions found.
+                    <TableCell colSpan={6} className="h-24 text-center">
+                    No transactions found for this type.
                     </TableCell>
                 </TableRow>
                 )}
