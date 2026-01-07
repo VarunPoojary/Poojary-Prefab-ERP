@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -88,15 +86,19 @@ function PayrollHistory({ workerId }: { workerId: string }) {
             const pMap = new Map(projectSnapshots.docs.map(doc => [doc.id, (doc.data() as Project).name]));
             setProjectsMap(pMap);
 
-            // 2. Fetch payroll transactions for the worker
-            const payrollQuery = query(
+            // 2. Fetch all transactions for the worker across all projects
+            const allWorkerTransactionsQuery = query(
                 collectionGroup(firestore, 'transactions'),
-                where('worker_id', '==', workerId),
-                where('type', 'in', ['payout_settlement', 'payout_advance'])
+                where('worker_id', '==', workerId)
             );
-            const payrollSnapshots = await getDocs(payrollQuery);
-            const txs = payrollSnapshots.docs.map(doc => doc.data() as Transaction);
-            setTransactions(txs);
+            const allTxsSnapshot = await getDocs(allWorkerTransactionsQuery);
+            
+            // 3. Filter for payroll-related transactions on the client side
+            const payrollTxs = allTxsSnapshot.docs
+                .map(doc => doc.data() as Transaction)
+                .filter(tx => tx.type === 'payout_settlement' || tx.type === 'payout_advance');
+
+            setTransactions(payrollTxs);
             
             setIsLoading(false);
         };
@@ -168,7 +170,7 @@ function AttendanceHistory({ workerId }: { workerId: string }) {
     const projectsQuery = useMemoFirebase(() => query(collection(firestore, 'projects')), [firestore]);
     const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
 
-    const projectsMap = useMemoFirebase(() => {
+    const projectsMap = useMemo(() => {
         if (!projects) return new Map();
         return new Map(projects.map(p => [p.id, p.name]));
     }, [projects]);
