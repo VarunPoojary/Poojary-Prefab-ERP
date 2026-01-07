@@ -1,6 +1,7 @@
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { WorkerList } from '@/components/admin/worker-list';
+import { AddWorkerModal } from '@/components/admin/add-worker-modal';
 
 export default function AdminWorkersPage() {
 
@@ -10,6 +11,7 @@ export default function AdminWorkersPage() {
         <h1 className="text-lg font-semibold md:text-2xl font-headline">
           Workers & Payroll
         </h1>
+        <AddWorkerModal />
       </div>
       <Card>
         <CardHeader>

@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 import { RecordPaymentModal } from './record-payment-modal';
+import { UpdateWorkerModal } from './update-worker-modal';
 
 export function WorkerList() {
   const firestore = useFirestore();
@@ -28,11 +29,6 @@ export function WorkerList() {
     isLoading,
     error,
   } = useCollection<Worker>(workersQuery);
-
-  const handleRowClick = (workerId: string) => {
-    // router.push(`/admin/workers/${workerId}`); // TODO: Implement worker detail page
-    console.log(`Navigating to worker ${workerId}`);
-  };
 
   if (isLoading) {
     return (
@@ -63,11 +59,12 @@ export function WorkerList() {
         <TableBody>
             {workers && workers.length > 0 ? (
             workers.map((worker) => (
-                <TableRow key={worker.id} >
-                    <TableCell className="font-medium" onClick={() => handleRowClick(worker.id)}>{worker.name}</TableCell>
-                    <TableCell onClick={() => handleRowClick(worker.id)}>{worker.skill}</TableCell>
-                    <TableCell onClick={() => handleRowClick(worker.id)}>{worker.phone}</TableCell>
-                    <TableCell className="text-right" onClick={() => handleRowClick(worker.id)}>
+              <UpdateWorkerModal key={worker.id} worker={worker}>
+                <TableRow className="cursor-pointer">
+                    <TableCell className="font-medium">{worker.name}</TableCell>
+                    <TableCell>{worker.skill}</TableCell>
+                    <TableCell>{worker.phone}</TableCell>
+                    <TableCell className="text-right">
                         <Badge variant={worker.current_balance > 0 ? 'destructive' : 'secondary'}>
                          ${worker.current_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </Badge>
@@ -76,6 +73,7 @@ export function WorkerList() {
                         <RecordPaymentModal worker={worker} />
                     </TableCell>
                 </TableRow>
+              </UpdateWorkerModal>
             ))
             ) : (
             <TableRow>

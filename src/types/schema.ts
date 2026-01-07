@@ -22,7 +22,7 @@ export interface Worker {
   name: string;
   skill: string;
   phone: string;
-  payment_type: 'hourly' | 'daily';
+  payment_type: 'hourly' | 'daily' | 'monthly';
   base_rate: number;
   current_balance: number;
 }
