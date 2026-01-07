@@ -31,14 +31,14 @@ const attendanceSchema = z.object({
   date: z.date({
     required_error: "A date is required.",
   }),
-  present_workers: z.record(z.boolean()).refine(
-    (workers) => Object.values(workers).some((isPresent) => isPresent),
-    {
-      message: "You must select at least one worker.",
-      path: ["present_workers"],
-    }
-  ),
+  present_workers: z.record(z.boolean()).optional(),
+}).refine(data => {
+    return data.present_workers && Object.values(data.present_workers).some(Boolean);
+}, {
+    message: "You must select at least one worker.",
+    path: ["present_workers"],
 });
+
 
 interface AddAttendanceModalProps {
   projectId: string;
@@ -64,7 +64,7 @@ export function AddAttendanceModal({ projectId }: AddAttendanceModalProps) {
   });
 
   const onSubmit = async (data: z.infer<typeof attendanceSchema>) => {
-    if (!firestore || !user) {
+    if (!firestore || !user || !data.present_workers) {
       toast({ variant: 'destructive', title: 'Error', description: 'Authentication or database error.' });
       return;
     }
