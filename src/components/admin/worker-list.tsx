@@ -47,6 +47,35 @@ export function WorkerList({ view = 'all' }: WorkerListProps) {
     return <p className="text-destructive">Error loading workers: {error.message}</p>;
   }
 
+  const renderRow = (worker: Worker) => {
+    if (view === 'payroll') {
+        return (
+            <TableRow key={worker.id}>
+                <TableCell className="font-medium">{worker.name}</TableCell>
+                <TableCell>{worker.skill}</TableCell>
+                <TableCell className="text-right">
+                    <Badge variant={worker.current_balance > 0 ? 'destructive' : 'secondary'}>
+                    ${worker.current_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </Badge>
+                </TableCell>
+                <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                    <RecordPaymentModal worker={worker} />
+                </TableCell>
+            </TableRow>
+        )
+    }
+
+    return (
+        <UpdateWorkerModal key={worker.id} worker={worker}>
+            <TableRow className="cursor-pointer">
+                <TableCell className="font-medium">{worker.name}</TableCell>
+                <TableCell>{worker.skill}</TableCell>
+                <TableCell>{worker.phone}</TableCell>
+            </TableRow>
+        </UpdateWorkerModal>
+    )
+  }
+
   return (
     <div className="rounded-md border">
         <Table>
@@ -68,28 +97,7 @@ export function WorkerList({ view = 'all' }: WorkerListProps) {
         </TableHeader>
         <TableBody>
             {workers && workers.length > 0 ? (
-            workers.map((worker) => (
-              <UpdateWorkerModal key={worker.id} worker={worker}>
-                <TableRow className="cursor-pointer">
-                    <TableCell className="font-medium">{worker.name}</TableCell>
-                    <TableCell>{worker.skill}</TableCell>
-                    {view === 'payroll' ? (
-                      <>
-                        <TableCell className="text-right">
-                            <Badge variant={worker.current_balance > 0 ? 'destructive' : 'secondary'}>
-                            ${worker.current_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </Badge>
-                        </TableCell>
-                        <TableCell className="text-center">
-                            <RecordPaymentModal worker={worker} />
-                        </TableCell>
-                      </>
-                    ) : (
-                      <TableCell>{worker.phone}</TableCell>
-                    )}
-                </TableRow>
-              </UpdateWorkerModal>
-            ))
+            workers.map((worker) => renderRow(worker))
             ) : (
             <TableRow>
                 <TableCell colSpan={view === 'payroll' ? 4 : 3} className="text-center">
