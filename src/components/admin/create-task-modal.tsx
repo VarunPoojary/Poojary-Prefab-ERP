@@ -58,6 +58,7 @@ export function CreateTaskModal() {
       title: '',
       description: '',
       project_id: '',
+      expected_completion_date: undefined,
     },
   });
 
@@ -68,12 +69,21 @@ export function CreateTaskModal() {
     }
     try {
       const tasksCollection = collection(firestore, `projects/${data.project_id}/tasks`);
-      await addDoc(tasksCollection, {
-        ...data,
+      
+      const taskData: any = {
+        title: data.title,
+        description: data.description || '',
+        project_id: data.project_id,
         status: 'todo',
         completion_photo_url: '',
-        expected_completion_date: data.expected_completion_date?.toISOString(),
-      });
+      };
+
+      if (data.expected_completion_date) {
+        taskData.expected_completion_date = data.expected_completion_date.toISOString();
+      }
+
+      await addDoc(tasksCollection, taskData);
+      
       toast({
         title: 'Task Created',
         description: `Task "${data.title}" has been successfully created.`,
