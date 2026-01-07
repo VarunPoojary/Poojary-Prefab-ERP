@@ -30,7 +30,7 @@ function TaskCard({ task }: { task: Task }) {
     )
 }
 
-function TaskListSection({ title, tasks, isLoading, projects }: { title: string, tasks: Task[], isLoading: boolean, projects: Project[] }) {
+function TaskListSection({ title, tasks, isLoading }: { title: string, tasks: Task[], isLoading: boolean }) {
     return (
         <AccordionItem value={title.toLowerCase()}>
             <AccordionTrigger className="text-lg font-semibold">{title} ({tasks.length})</AccordionTrigger>
@@ -42,7 +42,7 @@ function TaskListSection({ title, tasks, isLoading, projects }: { title: string,
                     </div>
                 ) : tasks.length > 0 ? (
                     tasks.map(task => (
-                        <UpdateTaskStatusModal key={task.id} task={task} projects={projects}>
+                        <UpdateTaskStatusModal key={task.id} task={task}>
                             <TaskCard task={task} />
                         </UpdateTaskStatusModal>
                     ))
@@ -69,14 +69,9 @@ export default function ProjectTasksPage() {
     
     const { data: tasks, isLoading: tasksLoading } = useCollection<Task>(tasksQuery);
     
-    // Although we only have one project on this page, the update modal is shared and needs the list.
-    const projectsQuery = useMemoFirebase(() => query(collection(firestore, 'projects')), [firestore]);
-    const { data: projectData, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
-
-
     const filteredTasks = (status: Task['status']) => tasks?.filter(t => t.status === status) || [];
 
-    const isLoading = tasksLoading || projectsLoading;
+    const isLoading = tasksLoading;
 
     return (
         <>
@@ -84,9 +79,9 @@ export default function ProjectTasksPage() {
                 <h1 className="text-lg font-semibold md:text-2xl font-headline">Manage Tasks</h1>
             </div>
             <Accordion type="multiple" defaultValue={['to do', 'in progress']} className="w-full">
-                <TaskListSection title="To Do" tasks={filteredTasks('todo')} isLoading={isLoading} projects={projectData || []} />
-                <TaskListSection title="In Progress" tasks={filteredTasks('inprogress')} isLoading={isLoading} projects={projectData || []} />
-                <TaskListSection title="Done" tasks={filteredTasks('done')} isLoading={isLoading} projects={projectData || []} />
+                <TaskListSection title="To Do" tasks={filteredTasks('todo')} isLoading={isLoading} />
+                <TaskListSection title="In Progress" tasks={filteredTasks('inprogress')} isLoading={isLoading} />
+                <TaskListSection title="Done" tasks={filteredTasks('done')} isLoading={isLoading} />
             </Accordion>
         </>
     );

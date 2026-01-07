@@ -21,7 +21,7 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import type { Project, Task } from '@/types/schema';
 import { useToast } from '@/hooks/use-toast';
@@ -33,14 +33,16 @@ const taskStatusSchema = z.object({
 
 interface UpdateTaskStatusModalProps {
   task: Task;
-  projects: Project[]; // Not used for filtering, but useful for display if needed
   children: React.ReactNode;
 }
 
-export function UpdateTaskStatusModal({ task, projects, children }: UpdateTaskStatusModalProps) {
+export function UpdateTaskStatusModal({ task, children }: UpdateTaskStatusModalProps) {
   const [open, setOpen] = useState(false);
   const firestore = useFirestore();
   const { toast } = useToast();
+
+  const projectRef = useMemoFirebase(() => doc(firestore, 'projects', task.project_id), [firestore, task.project_id]);
+  const { data: project } = useDoc<Project>(projectRef);
 
   const {
     control,
@@ -83,10 +85,6 @@ export function UpdateTaskStatusModal({ task, projects, children }: UpdateTaskSt
     }
   };
 
-  const getProjectName = (projectId: string) => {
-    return projects.find(p => p.id === projectId)?.name || "Unknown Project";
-  }
-
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'Not set';
     try {
@@ -112,7 +110,7 @@ export function UpdateTaskStatusModal({ task, projects, children }: UpdateTaskSt
           <div className="grid gap-6 py-4">
              <div className="space-y-1">
                 <Label className="text-muted-foreground">Project</Label>
-                <p className="font-semibold">{getProjectName(task.project_id)}</p>
+                <p className="font-semibold">{project?.name || "Unknown Project"}</p>
             </div>
              <div className="space-y-1">
                 <Label className="text-muted-foreground">Description</Label>
