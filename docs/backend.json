@@ -357,7 +357,19 @@
           },
           "description": "Stores worker profiles globally."
         }
+      },
+      {
+        "path": "/workers/{workerId}/transactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Stores payment transactions specific to a worker."
+        }
       }
     ]
   }
 }
+
+    

@@ -67,6 +67,11 @@ service cloud.firestore {
         allow read: if isAdmin() || isManager();
         // Only Admins can create, update, or delete workers.
         allow write: if isAdmin();
+
+        match /transactions/{transactionId} {
+            // Only admins can create and read payment transactions for a worker.
+            allow read, write: if isAdmin();
+        }
     }
     
     match /attendance/{attendanceId} {
@@ -125,3 +130,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

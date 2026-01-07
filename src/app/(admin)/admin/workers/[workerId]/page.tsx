@@ -3,7 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Worker, Transaction, Attendance, Project } from '@/types/schema';
-import { doc, collection, query, where, collectionGroup, getDocs } from 'firebase/firestore';
+import { doc, collection, query, where, collectionGroup, getDocs, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -70,63 +70,53 @@ function WorkerDetails({ worker, isLoading }: { worker: Worker | null, isLoading
 
 function PayrollHistory({ workerId }: { workerId: string }) {
     const firestore = useFirestore();
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    
+    // Query for project-specific advances
+    const advancesQuery = useMemoFirebase(() => {
+        if (!workerId) return null;
+        return query(
+            collectionGroup(firestore, 'transactions'),
+            where('worker_id', '==', workerId),
+            where('type', '==', 'payout_advance')
+        );
+    }, [firestore, workerId]);
+    const { data: advances, isLoading: advancesLoading } = useCollection<Transaction>(advancesQuery);
+
+    // Query for settlement payments from the worker's subcollection
+    const settlementsQuery = useMemoFirebase(() => {
+        if (!workerId) return null;
+        return query(
+             collection(firestore, `workers/${workerId}/transactions`),
+             where('type', '==', 'payout_settlement')
+        );
+    }, [firestore, workerId]);
+    const { data: settlements, isLoading: settlementsLoading } = useCollection<Transaction>(settlementsQuery);
+
     const [projectsMap, setProjectsMap] = useState<Map<string, string>>(new Map());
-    const [isLoading, setIsLoading] = useState(true);
+    const [projectsMapLoading, setProjectsMapLoading] = useState(true);
 
     useEffect(() => {
-        if (!firestore || !workerId) return;
-
-        const fetchPayrollData = async () => {
-            setIsLoading(true);
-            try {
-                // 1. Fetch all projects to create a name map
-                const projectsQuery = query(collection(firestore, 'projects'));
-                const projectSnapshots = await getDocs(projectsQuery);
-                const pMap = new Map(projectSnapshots.docs.map(doc => [doc.id, (doc.data() as Project).name]));
-                setProjectsMap(pMap);
-
-                // 2. Fetch project-specific transactions for the worker
-                const projectTxsQuery = query(
-                    collectionGroup(firestore, 'transactions'),
-                    where('worker_id', '==', workerId)
-                );
-
-                // 3. Fetch global, non-project-specific transactions for the worker
-                const globalTxsQuery = query(
-                    collection(firestore, 'transactions'),
-                    where('worker_id', '==', workerId)
-                );
-
-                const [projectTxsSnapshot, globalTxsSnapshot] = await Promise.all([
-                    getDocs(projectTxsQuery),
-                    getDocs(globalTxsQuery)
-                ]);
-
-                // 4. Combine and filter for payroll-related transactions
-                const allTxs = [
-                    ...projectTxsSnapshot.docs.map(doc => ({...doc.data(), id: doc.id} as Transaction)),
-                    ...globalTxsSnapshot.docs.map(doc => ({...doc.data(), id: doc.id} as Transaction))
-                ];
-
-                const payrollTxs = allTxs.filter(tx => tx.type === 'payout_settlement' || tx.type === 'payout_advance');
-                
-                payrollTxs.sort((a, b) => {
-                    const dateA = a.timestamp && (a.timestamp as any).toDate ? (a.timestamp as any).toDate() : new Date(a.timestamp as string);
-                    const dateB = b.timestamp && (b.timestamp as any).toDate ? (b.timestamp as any).toDate() : new Date(b.timestamp as string);
-                    return dateB.getTime() - dateA.getTime();
-                });
-
-                setTransactions(payrollTxs);
-            } catch (error) {
-                console.error("Error fetching payroll data:", error);
-            } finally {
-                setIsLoading(false);
-            }
+        if (!firestore) return;
+        const fetchProjects = async () => {
+            setProjectsMapLoading(true);
+            const projectsQuery = query(collection(firestore, 'projects'));
+            const projectSnapshots = await getDocs(projectsQuery);
+            const pMap = new Map(projectSnapshots.docs.map(doc => [doc.id, (doc.data() as Project).name]));
+            setProjectsMap(pMap);
+            setProjectsMapLoading(false);
         };
-
-        fetchPayrollData();
-    }, [firestore, workerId]);
+        fetchProjects();
+    }, [firestore]);
+    
+    const transactions = useMemo(() => {
+        const combined = [...(advances || []), ...(settlements || [])];
+        combined.sort((a, b) => {
+            const dateA = a.timestamp && (a.timestamp as any).toDate ? (a.timestamp as any).toDate() : new Date(a.timestamp as string);
+            const dateB = b.timestamp && (b.timestamp as any).toDate ? (b.timestamp as any).toDate() : new Date(b.timestamp as string);
+            return dateB.getTime() - dateA.getTime();
+        });
+        return combined;
+    }, [advances, settlements]);
 
 
     const formatDate = (timestamp: any) => {
@@ -135,7 +125,7 @@ function PayrollHistory({ workerId }: { workerId: string }) {
         return format(date, 'MMM d, yyyy');
     };
     
-     if (isLoading) {
+     if (advancesLoading || settlementsLoading || projectsMapLoading) {
         return <Skeleton className="h-40 w-full" />;
     }
 
@@ -184,7 +174,7 @@ function AttendanceHistory({ workerId }: { workerId: string }) {
 
     const attendanceQuery = useMemoFirebase(() => {
         if (!workerId) return null;
-        return query(collection(firestore, 'attendance'), where('worker_id', '==', workerId));
+        return query(collection(firestore, 'attendance'), where('worker_id', '==', workerId), orderBy('date', 'desc'));
     }, [firestore, workerId]);
 
     const { data: attendances, isLoading } = useCollection<Attendance>(attendanceQuery);
@@ -286,3 +276,5 @@ export default function WorkerDetailPage() {
         </div>
     );
 }
+
+    

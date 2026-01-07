@@ -16,7 +16,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, doc, runTransaction, serverTimestamp, addDoc } from 'firebase/firestore';
+import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import type { Worker } from '@/types/schema';
 import { useToast } from '@/hooks/use-toast';
 
@@ -58,7 +58,8 @@ export function RecordPaymentModal({ worker }: RecordPaymentModalProps) {
     }
 
     const workerRef = doc(firestore, 'workers', worker.id);
-    const transactionsCollectionRef = collection(firestore, 'transactions');
+    // Use the new subcollection path
+    const transactionsCollectionRef = collection(firestore, `workers/${worker.id}/transactions`);
     
     try {
       // Use a transaction to ensure balance update and transaction record are atomic.
@@ -74,8 +75,8 @@ export function RecordPaymentModal({ worker }: RecordPaymentModalProps) {
         // 1. Update worker's balance
         transaction.update(workerRef, { current_balance: newBalance });
         
-        // 2. Create the global transaction record
-        const newTransactionRef = doc(transactionsCollectionRef);
+        // 2. Create the transaction record in the worker's subcollection
+        const newTransactionRef = doc(transactionsCollectionRef); // Create a new doc reference in the subcollection
         transaction.set(newTransactionRef, {
             type: 'payout_settlement',
             amount: data.amount,
@@ -154,3 +155,5 @@ export function RecordPaymentModal({ worker }: RecordPaymentModalProps) {
     </Dialog>
   );
 }
+
+    
