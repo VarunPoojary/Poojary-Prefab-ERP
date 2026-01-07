@@ -26,11 +26,23 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore } from '@/firebase';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import type { Project, Task } from '@/types/schema';
 import { useToast } from '@/hooks/use-toast';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 
 const taskSchema = z.object({
   title: z.string().min(1, 'Task title is required'),
@@ -109,6 +121,25 @@ export function UpdateTaskModal({ task, projects, children }: UpdateTaskModalPro
         variant: 'destructive',
         title: 'Error',
         description: 'Failed to update task. Please try again.',
+      });
+    }
+  };
+
+  const handleDelete = async () => {
+    const taskRef = doc(firestore, `projects/${task.project_id}/tasks`, task.id);
+    try {
+      await deleteDoc(taskRef);
+      toast({
+        title: "Task Deleted",
+        description: `Task "${task.title}" has been permanently removed.`,
+      });
+      setOpen(false);
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete task. Please try again.",
       });
     }
   };
@@ -211,7 +242,28 @@ export function UpdateTaskModal({ task, projects, children }: UpdateTaskModalPro
                 />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex justify-between w-full">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" type="button">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the task
+                    "{task.title}".
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <Button type="submit">Update Task</Button>
           </DialogFooter>
         </form>
