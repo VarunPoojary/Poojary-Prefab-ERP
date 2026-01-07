@@ -33,7 +33,6 @@ import { ProtectedRoute } from '@/components/protected-route';
 const menuItems = [
   { href: '/dashboard/projects', label: 'Projects', icon: Briefcase },
   { href: '/dashboard/workers', label: 'Workers', icon: Users },
-  { href: '/dashboard/transactions', label: 'Transactions', icon: ArrowLeftRight },
   { href: '/dashboard/budget', label: 'Budget AI', icon: PieChart },
 ];
 

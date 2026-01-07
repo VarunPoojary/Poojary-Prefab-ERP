@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc, getDoc } from 'firebase/firestore';
 import type { Project, User } from '@/types/schema';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeftRight, CalendarCheck, ClipboardCheck, DollarSign } from 'lucide-react';
+import { ArrowLeftRight, CalendarCheck, ClipboardCheck } from 'lucide-react';
 import Link from 'next/link';
 
 function ManagerProjectView({ projects, userRole }: { projects: Project[], userRole: User['role'] | null }) {
@@ -34,8 +34,7 @@ function ManagerProjectView({ projects, userRole }: { projects: Project[], userR
   const actions = (projectId: string) => [
     { href: `/dashboard/projects/${projectId}/attendance`, label: 'Mark Attendance', icon: CalendarCheck },
     { href: `/dashboard/projects/${projectId}/tasks`, label: 'Manage Tasks', icon: ClipboardCheck },
-    { href: `/dashboard/projects/${projectId}/transactions/expense`, label: 'Add Expense', icon: ArrowLeftRight },
-    { href: `/dashboard/projects/${projectId}/transactions/income`, label: 'Add Income', icon: DollarSign },
+    { href: `/dashboard/projects/${projectId}/transactions`, label: 'Manage Expenses', icon: ArrowLeftRight },
   ];
 
   return (
@@ -47,7 +46,7 @@ function ManagerProjectView({ projects, userRole }: { projects: Project[], userR
             <CardDescription>{project.location}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {actions(project.id).map((action) => (
                 <Button
                   key={action.label}
