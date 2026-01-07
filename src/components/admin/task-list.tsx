@@ -60,8 +60,14 @@ export function TaskList() {
 
   const filteredTasks = useMemo(() => {
     return tasks
-      .filter(task => projectFilter === 'all' || task.project_id === projectFilter)
-      .filter(task => statusFilter === 'all' || task.status === statusFilter);
+      .filter(task => {
+        if (projectFilter === 'all') return true;
+        return task.project_id === projectFilter;
+      })
+      .filter(task => {
+        if (statusFilter === 'all') return true;
+        return task.status === statusFilter;
+      });
   }, [tasks, projectFilter, statusFilter]);
 
   if (isLoading || projectsLoading) {
