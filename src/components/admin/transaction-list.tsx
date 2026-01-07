@@ -83,9 +83,19 @@ export function TransactionList({ types }: TransactionListProps) {
 
   const handleDelete = async (transaction: Transaction) => {
     if (!transaction.project_id) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Transaction is missing project ID.' });
+        // This case handles global transactions which are deleted from the root collection.
+        const transactionRef = doc(firestore, `transactions`, transaction.id);
+         try {
+            await deleteDoc(transactionRef);
+            setTransactions(prev => prev.filter(t => t.id !== transaction.id));
+            toast({ title: 'Success', description: 'Transaction deleted successfully.' });
+        } catch (e) {
+            console.error("Error deleting global transaction:", e);
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete transaction.' });
+        }
         return;
     }
+
     const transactionRef = doc(firestore, `projects/${transaction.project_id}/transactions`, transaction.id);
     try {
         await deleteDoc(transactionRef);
@@ -95,10 +105,6 @@ export function TransactionList({ types }: TransactionListProps) {
         console.error("Error deleting transaction:", e);
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete transaction.' });
     }
-  }
-  
-  const getProjectName = (projectId: string) => {
-      return projectsMap.get(projectId) || 'Unknown Project';
   }
 
   if (isLoading || projectsLoading) {
@@ -140,7 +146,6 @@ export function TransactionList({ types }: TransactionListProps) {
                     <TableHead>Type</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Category</TableHead>
-                    <TableHead>Project</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -154,7 +159,6 @@ export function TransactionList({ types }: TransactionListProps) {
                         </TableCell>
                         <TableCell className="font-medium">${transaction.amount.toLocaleString()}</TableCell>
                         <TableCell>{transaction.category}</TableCell>
-                        <TableCell>{getProjectName(transaction.project_id)}</TableCell>
                         <TableCell>{formatDate(transaction.timestamp)}</TableCell>
                         <TableCell className="text-right">
                            <AlertDialog>
@@ -182,7 +186,7 @@ export function TransactionList({ types }: TransactionListProps) {
                 ))
                 ) : (
                 <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                     No transactions found for this type.
                     </TableCell>
                 </TableRow>
