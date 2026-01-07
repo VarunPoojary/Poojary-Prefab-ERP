@@ -1,8 +1,8 @@
 'use client';
 
-import React, { doc, getDoc } from 'react';
+import React from 'react';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, doc, getDoc } from 'firebase/firestore';
 import type { Project, User } from '@/types/schema';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,12 +46,13 @@ function ManagerProjectView({ projects, userRole }: { projects: Project[], userR
             <CardDescription>{project.location}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-2">
               {actions(project.id).map((action) => (
                 <Button
                   key={action.label}
                   asChild
                   variant="outline"
+                  size="sm"
                 >
                   <Link href={action.href}>
                     <action.icon />
