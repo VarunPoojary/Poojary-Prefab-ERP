@@ -74,18 +74,18 @@ service cloud.firestore {
         }
     }
     
-    match /attendance/{attendanceId} {
-        // Admins can get any record. Managers can get records for their assigned projects.
-        allow get: if isAdmin() || (isManager() && isAssignedManager(resource.data.project_id));
+     match /attendance/{attendanceId} {
+      // Admins can get any record. Managers can get records for their assigned projects.
+      allow get: if isAdmin() || (isManager() && isAssignedManager(resource.data.project_id));
         
-        // Admins can list all records. Managers must filter by a project_id.
-        allow list: if isAdmin() || (isManager() && isAssignedManager(request.query.project_id));
+      // Admins can list all records. Managers must filter by a project_id they are assigned to.
+      allow list: if isAdmin() || (isManager() && isAssignedManager(request.query.project_id));
         
-        // Managers can create attendance records for their projects.
-        allow create: if isManager() && isAssignedManager(request.resource.data.project_id);
+      // Managers can create attendance records for their projects.
+      allow create: if isManager() && isAssignedManager(request.resource.data.project_id);
 
-        // Only admins can update or delete records.
-        allow update, delete: if isAdmin();
+      // Only admins can update or delete records.
+      allow update, delete: if isAdmin();
     }
     
     match /transactions/{transactionId} {
@@ -116,9 +116,9 @@ service cloud.firestore {
       allow get, list: if isAdmin() || (isManager() && isAssignedManager(projectId));
     }
     
-    // This rule allows admins to perform collection group queries on 'transactions' and 'attendance'.
+    // This rule allows admins to perform collection group queries on 'transactions', 'attendance', and 'tasks'.
     match /{path=**}/{collectionName}/{docId} {
-        allow list: if (collectionName == 'transactions' || collectionName == 'attendance') && isAdmin();
+        allow list: if (collectionName == 'transactions' || collectionName == 'attendance' || collectionName == 'tasks') && isAdmin();
     }
   }
 }
