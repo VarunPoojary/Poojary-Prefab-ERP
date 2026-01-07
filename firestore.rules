@@ -97,14 +97,11 @@ service cloud.firestore {
     }
 
     match /projects/{projectId}/tasks/{taskId} {
-      // Managers can read tasks for their projects (admins covered by collection group rule).
+      // Admins can create, update, and delete tasks.
+      allow write: if isAdmin();
+      
+      // Managers can read tasks for their assigned projects.
       allow get, list: if isManager() && isAssignedManager(projectId);
-      
-      // Managers can create and update tasks (e.g., mark as complete).
-      allow create, update: if isManager() && isAssignedManager(projectId);
-      
-      // Only admins can delete tasks.
-      allow delete: if isAdmin();
     }
   }
 }
