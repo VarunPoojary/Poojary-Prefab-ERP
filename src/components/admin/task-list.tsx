@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, getDocs, collectionGroup } from 'firebase/firestore';
+import { collection, query, onSnapshot, collectionGroup, Unsubscribe } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Task, Project } from '@/types/schema';
 import {
@@ -35,24 +35,26 @@ export function TaskList() {
   useEffect(() => {
     if (!firestore) return;
 
-    const newProjectsMap = new Map(projectData?.map(p => [p.id, p.name]) || []);
-    setProjectsMap(newProjectsMap);
-
-    const fetchTasks = async () => {
-      setIsLoading(true);
-      try {
-        const tasksQuery = query(collectionGroup(firestore, 'tasks'));
-        const tasksSnapshot = await getDocs(tasksQuery);
-        const allTasks = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+    if (projectData) {
+        const newProjectsMap = new Map(projectData.map(p => [p.id, p.name]));
+        setProjectsMap(newProjectsMap);
+    }
+    
+    setIsLoading(true);
+    const tasksQuery = query(collectionGroup(firestore, 'tasks'));
+    
+    const unsubscribe = onSnapshot(tasksQuery, (snapshot) => {
+        const allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
         setTasks(allTasks);
-      } catch (e) {
-        setError(e as Error);
-      } finally {
         setIsLoading(false);
-      }
-    };
+    }, (e) => {
+        console.error("Error fetching tasks in real-time: ", e);
+        setError(e as Error);
+        setIsLoading(false);
+    });
 
-    fetchTasks();
+    return () => unsubscribe();
+
   }, [firestore, projectData]);
 
   const filteredTasks = useMemo(() => {
