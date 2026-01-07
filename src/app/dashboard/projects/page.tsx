@@ -88,12 +88,16 @@ export default function ProjectsPage() {
 
   const projectsQuery = useMemoFirebase(() => {
     // CRITICAL FIX: Do not run the query until the user's role is confirmed to be 'manager'.
-    if (!user || !firestore || userRole !== 'manager') return null;
+    // If the role isn't manager, it will return null, and useCollection will not execute.
+    if (!user || !firestore || userRole !== 'manager') {
+        return null;
+    }
     return query(collection(firestore, 'projects'), where('assigned_manager_id', '==', user.uid));
-  }, [firestore, user, userRole]);
+  }, [firestore, user, userRole]); // The query now correctly depends on userRole.
 
   const { data: projects, isLoading } = useCollection<Project>(projectsQuery);
 
+  // The loading state now correctly waits for both the role check and the data fetch.
   if (isLoading || !userRole) {
     return (
       <div className="space-y-4">
