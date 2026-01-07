@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { doc, getDoc } from 'react';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import type { Project, User } from '@/types/schema';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,9 +32,9 @@ function ManagerProjectView({ projects, userRole }: { projects: Project[], userR
   }
 
   const actions = (projectId: string) => [
-    { href: `/dashboard/projects/${projectId}/attendance`, label: 'Mark Attendance', icon: CalendarCheck },
-    { href: `/dashboard/projects/${projectId}/tasks`, label: 'Manage Tasks', icon: ClipboardCheck },
-    { href: `/dashboard/projects/${projectId}/transactions`, label: 'Manage Expenses', icon: ArrowLeftRight },
+    { href: `/dashboard/projects/${projectId}/attendance`, label: 'Attendance', icon: CalendarCheck },
+    { href: `/dashboard/projects/${projectId}/tasks`, label: 'Tasks', icon: ClipboardCheck },
+    { href: `/dashboard/projects/${projectId}/transactions`, label: 'Expenses', icon: ArrowLeftRight },
   ];
 
   return (
@@ -46,16 +46,15 @@ function ManagerProjectView({ projects, userRole }: { projects: Project[], userR
             <CardDescription>{project.location}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="flex flex-wrap gap-4">
               {actions(project.id).map((action) => (
                 <Button
                   key={action.label}
                   asChild
                   variant="outline"
-                  className="h-24 flex-col gap-2 text-base"
                 >
                   <Link href={action.href}>
-                    <action.icon className="h-6 w-6" />
+                    <action.icon />
                     {action.label}
                   </Link>
                 </Button>
