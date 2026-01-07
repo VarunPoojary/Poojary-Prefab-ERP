@@ -79,6 +79,11 @@ service cloud.firestore {
         allow update, delete: if isAdmin();
     }
 
+    // This rule allows admins to perform collection group queries on 'tasks'.
+    match /{path=**}/tasks/{taskId} {
+      allow read: if isAdmin();
+    }
+    
     match /projects/{projectId}/transactions/{transactionId} {
       // Admins can read all transactions. Managers can read transactions for their projects.
       allow read: if isAdmin() || (isManager() && isAssignedManager(projectId));
@@ -92,8 +97,8 @@ service cloud.firestore {
     }
 
     match /projects/{projectId}/tasks/{taskId} {
-      // Admins can read all tasks. Managers can read tasks for their projects.
-      allow read: if isAdmin() || (isManager() && isAssignedManager(projectId));
+      // Managers can read tasks for their projects (admins covered by collection group rule).
+      allow get, list: if isManager() && isAssignedManager(projectId);
       
       // Managers can create and update tasks (e.g., mark as complete).
       allow create, update: if isManager() && isAssignedManager(projectId);
