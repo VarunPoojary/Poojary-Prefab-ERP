@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -25,6 +26,7 @@ interface WorkerListProps {
 
 export function WorkerList({ view = 'all' }: WorkerListProps) {
   const firestore = useFirestore();
+  const router = useRouter();
   
   const workersQuery = useMemoFirebase(() => query(collection(firestore, 'workers')), [firestore]);
   const {
@@ -47,6 +49,12 @@ export function WorkerList({ view = 'all' }: WorkerListProps) {
     return <p className="text-destructive">Error loading workers: {error.message}</p>;
   }
 
+  const handleRowClick = (workerId: string) => {
+    if (view === 'all') {
+      router.push(`/admin/workers/${workerId}`);
+    }
+  };
+
   const renderRow = (worker: Worker) => {
     if (view === 'payroll') {
         return (
@@ -66,13 +74,11 @@ export function WorkerList({ view = 'all' }: WorkerListProps) {
     }
 
     return (
-        <UpdateWorkerModal key={worker.id} worker={worker}>
-            <TableRow className="cursor-pointer">
-                <TableCell className="font-medium">{worker.name}</TableCell>
-                <TableCell>{worker.skill}</TableCell>
-                <TableCell>{worker.phone}</TableCell>
-            </TableRow>
-        </UpdateWorkerModal>
+        <TableRow key={worker.id} onClick={() => handleRowClick(worker.id)} className="cursor-pointer">
+            <TableCell className="font-medium">{worker.name}</TableCell>
+            <TableCell>{worker.skill}</TableCell>
+            <TableCell>{worker.phone}</TableCell>
+        </TableRow>
     )
   }
 
