@@ -19,9 +19,12 @@ import { useRouter } from 'next/navigation';
 import { RecordPaymentModal } from './record-payment-modal';
 import { UpdateWorkerModal } from './update-worker-modal';
 
-export function WorkerList() {
+interface WorkerListProps {
+  view?: 'all' | 'payroll';
+}
+
+export function WorkerList({ view = 'all' }: WorkerListProps) {
   const firestore = useFirestore();
-  const router = useRouter();
   
   const workersQuery = useMemoFirebase(() => query(collection(firestore, 'workers')), [firestore]);
   const {
@@ -48,13 +51,20 @@ export function WorkerList() {
     <div className="rounded-md border">
         <Table>
         <TableHeader>
-            <TableRow>
-            <TableHead>Worker Name</TableHead>
-            <TableHead>Skill</TableHead>
-            <TableHead>Phone</TableHead>
-            <TableHead className="text-right">Net Payable</TableHead>
-            <TableHead className="text-center">Actions</TableHead>
-            </TableRow>
+           {view === 'payroll' ? (
+              <TableRow>
+                <TableHead>Worker Name</TableHead>
+                <TableHead>Skill</TableHead>
+                <TableHead className="text-right">Net Payable</TableHead>
+                <TableHead className="text-center">Actions</TableHead>
+              </TableRow>
+            ) : (
+               <TableRow>
+                <TableHead>Worker Name</TableHead>
+                <TableHead>Skill</TableHead>
+                <TableHead>Phone</TableHead>
+              </TableRow>
+            )}
         </TableHeader>
         <TableBody>
             {workers && workers.length > 0 ? (
@@ -63,21 +73,26 @@ export function WorkerList() {
                 <TableRow className="cursor-pointer">
                     <TableCell className="font-medium">{worker.name}</TableCell>
                     <TableCell>{worker.skill}</TableCell>
-                    <TableCell>{worker.phone}</TableCell>
-                    <TableCell className="text-right">
-                        <Badge variant={worker.current_balance > 0 ? 'destructive' : 'secondary'}>
-                         ${worker.current_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                        <RecordPaymentModal worker={worker} />
-                    </TableCell>
+                    {view === 'payroll' ? (
+                      <>
+                        <TableCell className="text-right">
+                            <Badge variant={worker.current_balance > 0 ? 'destructive' : 'secondary'}>
+                            ${worker.current_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                            <RecordPaymentModal worker={worker} />
+                        </TableCell>
+                      </>
+                    ) : (
+                      <TableCell>{worker.phone}</TableCell>
+                    )}
                 </TableRow>
               </UpdateWorkerModal>
             ))
             ) : (
             <TableRow>
-                <TableCell colSpan={5} className="text-center">
+                <TableCell colSpan={view === 'payroll' ? 4 : 3} className="text-center">
                 No workers found.
                 </TableCell>
             </TableRow>
