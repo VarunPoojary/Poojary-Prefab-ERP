@@ -220,12 +220,12 @@ export function ExpenseList() {
             <Card key={transaction.id}>
               <CardHeader>
                 <CardTitle>${transaction.amount.toLocaleString()}</CardTitle>
-                <CardDescription>{projectsMap.get(transaction.project_id) || 'Unknown Project'}</CardDescription>
+                <CardDescription>{transaction.description}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Category</span>
-                  <span className="font-medium">{transaction.category}</span>
+                  <span className="text-muted-foreground">Project</span>
+                  <span className="font-medium">{projectsMap.get(transaction.project_id) || 'Unknown Project'}</span>
                 </div>
                  <div className="flex justify-between">
                   <span className="text-muted-foreground">Date</span>
