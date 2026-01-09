@@ -47,13 +47,14 @@ function ManagerProjectView({ projects, userRole }: { projects: Project[], userR
             <CardDescription>{project.location}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               {actions(project.id).map((action) => (
                 <Button
                   key={action.label}
                   asChild
                   variant="default"
                   size="sm"
+                  className="w-full sm:flex-1"
                 >
                   <Link href={action.href}>
                     <action.icon />
