@@ -25,6 +25,7 @@ import {
   SidebarFooter,
   SidebarTrigger,
   SidebarInset,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { Icons } from '@/components/icons';
 import { UserNav } from '@/components/user-nav';
@@ -50,6 +51,30 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  // useSidebar must be used within SidebarProvider, so we can use it in a sub-component.
+  // Or we can create a new component for the menu items.
+  // A simple way is to wrap the menu in a component that uses the hook.
+  
+  const MobileAwareMenuItems = () => {
+    const { setOpenMobile } = useSidebar();
+    return (
+      <>
+        {adminMenuItems.map(({ href, label, icon: Icon }) => (
+          <SidebarMenuItem key={href}>
+            <Link href={href} onClick={() => setOpenMobile(false)}>
+              <SidebarMenuButton
+                isActive={pathname.startsWith(href)}
+                tooltip={label}
+              >
+                <Icon />
+                <span>{label}</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+        ))}
+      </>
+    )
+  }
 
   return (
     <ProtectedRoute>
@@ -68,37 +93,7 @@ export default function AdminLayout({
                 <SidebarMenuItem>
                     <span className="p-2 text-xs font-semibold text-muted-foreground">Admin</span>
                 </SidebarMenuItem>
-              {adminMenuItems.map(({ href, label, icon: Icon }) => (
-                <SidebarMenuItem key={href}>
-                  <Link href={href}>
-                    <SidebarMenuButton
-                      isActive={pathname.startsWith(href)}
-                      tooltip={label}
-                    >
-                      <Icon />
-                      <span>{label}</span>
-                    </SidebarMenuButton>
-                  </Link>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-            <SidebarMenu>
-                <SidebarMenuItem>
-                    <span className="p-2 text-xs font-semibold text-muted-foreground">Manager</span>
-                </SidebarMenuItem>
-              {mainMenuItems.map(({ href, label, icon: Icon }) => (
-                <SidebarMenuItem key={href}>
-                  <Link href={href}>
-                    <SidebarMenuButton
-                      isActive={pathname.startsWith(href) && href !== '/dashboard' || pathname === '/dashboard'}
-                      tooltip={label}
-                    >
-                      <Icon />
-                      <span>{label}</span>
-                    </SidebarMenuButton>
-                  </Link>
-                </SidebarMenuItem>
-              ))}
+                <MobileAwareMenuItems />
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>
