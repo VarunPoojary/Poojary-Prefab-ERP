@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -102,13 +103,13 @@ export function ExpenseList() {
   if (isLoading || projectsLoading) {
     return (
       <div className="space-y-4">
-        <div className="flex gap-4">
-          <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-10 w-48" />
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Skeleton className="h-10 w-full sm:w-48" />
+          <Skeleton className="h-10 w-full sm:w-48" />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-4">
           {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-12 w-full" />
+            <Skeleton key={i} className="h-24 w-full" />
           ))}
         </div>
       </div>
@@ -136,9 +137,9 @@ export function ExpenseList() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-center gap-4">
         <Select value={projectFilter} onValueChange={setProjectFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Filter by project..." />
           </SelectTrigger>
           <SelectContent>
@@ -149,7 +150,7 @@ export function ExpenseList() {
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Filter by status..." />
           </SelectTrigger>
           <SelectContent>
@@ -160,7 +161,9 @@ export function ExpenseList() {
           </SelectContent>
         </Select>
       </div>
-      <div className="rounded-md border">
+
+       {/* Desktop View */}
+      <div className="hidden md:block rounded-md border">
           <Table>
               <TableHeader>
                   <TableRow>
@@ -209,6 +212,49 @@ export function ExpenseList() {
               </TableBody>
           </Table>
       </div>
+
+      {/* Mobile View */}
+      <div className="md:hidden space-y-4">
+        {filteredTransactions.length > 0 ? (
+          filteredTransactions.map((transaction) => (
+            <Card key={transaction.id}>
+              <CardHeader>
+                <CardTitle>${transaction.amount.toLocaleString()}</CardTitle>
+                <CardDescription>{projectsMap.get(transaction.project_id) || 'Unknown Project'}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Category</span>
+                  <span className="font-medium">{transaction.category}</span>
+                </div>
+                 <div className="flex justify-between">
+                  <span className="text-muted-foreground">Date</span>
+                  <span className="font-medium">{formatDate(transaction.timestamp)}</span>
+                </div>
+                 <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Status</span>
+                  <Badge variant={getStatusVariant(transaction.status)}>{transaction.status}</Badge>
+                </div>
+                {transaction.status === 'unapproved' && (
+                  <div className="flex gap-2 justify-end pt-3">
+                    <Button variant="outline" size="sm" onClick={() => handleUpdateStatus(transaction, 'approved')}>
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Approve
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleUpdateStatus(transaction, 'rejected')}>
+                         <XCircle className="mr-2 h-4 w-4" />
+                        Reject
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <div className="text-center text-muted-foreground py-10">No expenses found for the selected filters.</div>
+        )}
+      </div>
+
     </div>
   );
 }

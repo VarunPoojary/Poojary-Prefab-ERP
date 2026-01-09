@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -82,21 +83,16 @@ export function TransactionList({ types }: TransactionListProps) {
 
 
   const handleDelete = async (transaction: Transaction) => {
-    if (!transaction.project_id) {
-        // This case handles global transactions which are deleted from the root collection.
-        const transactionRef = doc(firestore, `transactions`, transaction.id);
-         try {
-            await deleteDoc(transactionRef);
-            setTransactions(prev => prev.filter(t => t.id !== transaction.id));
-            toast({ title: 'Success', description: 'Transaction deleted successfully.' });
-        } catch (e) {
-            console.error("Error deleting global transaction:", e);
-            toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete transaction.' });
-        }
-        return;
+    // This logic handles global transactions, project transactions, and worker transactions
+    let transactionRef;
+    if (transaction.project_id) {
+       transactionRef = doc(firestore, `projects/${transaction.project_id}/transactions`, transaction.id);
+    } else if (transaction.worker_id && transaction.type === 'payout_settlement') {
+       transactionRef = doc(firestore, `workers/${transaction.worker_id}/transactions`, transaction.id);
+    } else {
+       transactionRef = doc(firestore, `transactions`, transaction.id);
     }
-
-    const transactionRef = doc(firestore, `projects/${transaction.project_id}/transactions`, transaction.id);
+    
     try {
         await deleteDoc(transactionRef);
         setTransactions(prev => prev.filter(t => t.id !== transaction.id));
@@ -109,9 +105,9 @@ export function TransactionList({ types }: TransactionListProps) {
 
   if (isLoading || projectsLoading) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-4">
         {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-12 w-full" />
+          <Skeleton key={i} className="h-24 w-full" />
         ))}
       </div>
     );
@@ -137,62 +133,125 @@ export function TransactionList({ types }: TransactionListProps) {
     return format(date, 'MMM d, yyyy');
   };
 
+  const isPayroll = types.includes('payout_advance') || types.includes('payout_settlement');
+
 
   return (
-    <div className="rounded-md border">
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {transactions && transactions.length > 0 ? (
-                transactions.map((transaction) => (
-                    <TableRow key={transaction.id} >
-                        <TableCell>
-                            <Badge variant={getVariantForType(transaction.type)}>{transaction.type.replace('_', ' ')}</Badge>
-                        </TableCell>
-                        <TableCell className="font-medium">${transaction.amount.toLocaleString()}</TableCell>
-                        <TableCell>{transaction.category}</TableCell>
-                        <TableCell>{formatDate(transaction.timestamp)}</TableCell>
-                        <TableCell className="text-right">
-                           <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete the transaction
-                                    record.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDelete(transaction)}>Delete</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                        </TableCell>
-                    </TableRow>
-                ))
-                ) : (
-                <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
-                    No transactions found for this type.
-                    </TableCell>
-                </TableRow>
+    <>
+      {/* Desktop View */}
+      <div className="hidden md:block rounded-md border">
+          <Table>
+              <TableHeader>
+                  <TableRow>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Category</TableHead>
+                      {!isPayroll && <TableHead>Project</TableHead>}
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+              </TableHeader>
+              <TableBody>
+                  {transactions && transactions.length > 0 ? (
+                  transactions.map((transaction) => (
+                      <TableRow key={transaction.id} >
+                          <TableCell>
+                              <Badge variant={getVariantForType(transaction.type)}>{transaction.type.replace('_', ' ')}</Badge>
+                          </TableCell>
+                          <TableCell className="font-medium">${transaction.amount.toLocaleString()}</TableCell>
+                          <TableCell>{transaction.category}</TableCell>
+                          {!isPayroll && <TableCell>{transaction.project_id ? projectsMap.get(transaction.project_id) : 'N/A'}</TableCell>}
+                          <TableCell>{formatDate(transaction.timestamp)}</TableCell>
+                          <TableCell className="text-right">
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This action cannot be undone. This will permanently delete the transaction
+                                      record.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(transaction)}>Delete</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                          </TableCell>
+                      </TableRow>
+                  ))
+                  ) : (
+                  <TableRow>
+                      <TableCell colSpan={isPayroll ? 5 : 6} className="h-24 text-center">
+                      No transactions found for this type.
+                      </TableCell>
+                  </TableRow>
+                  )}
+              </TableBody>
+          </Table>
+      </div>
+
+      {/* Mobile View */}
+      <div className="md:hidden space-y-4">
+        {transactions && transactions.length > 0 ? (
+          transactions.map((transaction) => (
+            <Card key={transaction.id}>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>${transaction.amount.toLocaleString()}</CardTitle>
+                  <CardDescription>
+                     <Badge variant={getVariantForType(transaction.type)} className="mt-1">{transaction.type.replace('_', ' ')}</Badge>
+                  </CardDescription>
+                </div>
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete the transaction
+                          record.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(transaction)}>Delete</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+              </CardHeader>
+              <CardContent className="text-sm space-y-3">
+                 <div className="flex justify-between">
+                    <span className="text-muted-foreground">Category</span>
+                    <span>{transaction.category}</span>
+                </div>
+                {!isPayroll && (
+                  <div className="flex justify-between">
+                      <span className="text-muted-foreground">Project</span>
+                      <span>{transaction.project_id ? projectsMap.get(transaction.project_id) : 'N/A'}</span>
+                  </div>
                 )}
-            </TableBody>
-        </Table>
-    </div>
+                 <div className="flex justify-between">
+                    <span className="text-muted-foreground">Date</span>
+                    <span>{formatDate(transaction.timestamp)}</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+           <div className="text-center text-muted-foreground py-10">No transactions found for this type.</div>
+        )}
+      </div>
+    </>
   );
 }

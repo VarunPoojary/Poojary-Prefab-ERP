@@ -15,16 +15,22 @@ function WorkerList() {
 
   if (isLoading) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-4">
         {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-12 w-full" />
+          <Skeleton key={i} className="h-20 w-full" />
         ))}
       </div>
     );
   }
+  
+  if (!workers || workers.length === 0) {
+      return <div className="text-center text-muted-foreground py-10">No workers found.</div>
+  }
 
   return (
-     <div className="rounded-md border">
+    <>
+      {/* Desktop View */}
+     <div className="hidden md:block rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
@@ -34,24 +40,33 @@ function WorkerList() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {workers && workers.length > 0 ? (
-            workers.map((worker) => (
+          {workers.map((worker) => (
               <TableRow key={worker.id}>
                 <TableCell className="font-medium">{worker.name}</TableCell>
                 <TableCell>{worker.skill}</TableCell>
                 <TableCell>{worker.phone}</TableCell>
               </TableRow>
             ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={3} className="h-24 text-center">
-                No workers found.
-              </TableCell>
-            </TableRow>
-          )}
+          }
         </TableBody>
       </Table>
     </div>
+
+    {/* Mobile View */}
+    <div className="md:hidden space-y-4">
+      {workers.map((worker) => (
+        <Card key={worker.id}>
+            <CardHeader>
+                <CardTitle>{worker.name}</CardTitle>
+                <CardDescription>{worker.skill}</CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm">
+                <p className="text-muted-foreground">{worker.phone}</p>
+            </CardContent>
+        </Card>
+      ))}
+    </div>
+    </>
   )
 }
 
@@ -59,9 +74,9 @@ function WorkerList() {
 export default function WorkersPage() {
   return (
     <>
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl font-headline">Workers</h1>
-        <Button>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <h1 className="text-lg font-semibold md:text-2xl font-headline self-start">Workers</h1>
+        <Button className="w-full sm:w-auto">
           <PlusCircle className="mr-2 h-4 w-4" />
           Add Worker
         </Button>

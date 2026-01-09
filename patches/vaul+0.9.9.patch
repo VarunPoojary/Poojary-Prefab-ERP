@@ -1,0 +1,31 @@
+diff --git a/node_modules/vaul/dist/index.mjs b/node_modules/vaul/dist/index.mjs
+index 9e43813..153f958 100644
+--- a/node_modules/vaul/dist/index.mjs
++++ b/node_modules/vaul/dist/index.mjs
+@@ -1,5 +1,5 @@
+ import {forwardRef as h, Children as p, isValidElement as S, cloneElement as I, useState as L, useRef as x, useEffect as N, useReducer as E, createContext as B, useContext as b, useCallback as A} from "react";
+-import {createPortal as w} from "react-dom";
++import {createPortal as w} from "react-dom/client";
+ function M() {
+   let [e, t] = E((s) => s + 1, 0);
+   return N(() => {
+diff --git a/node_modules/vaul/package.json b/node_modules/vaul/package.json
+index 3251722..209867c 100644
+--- a/node_modules/vaul/package.json
++++ b/node_modules/vaul/package.json
+@@ -62,11 +62,11 @@
+     "react-dom": ">=18"
+   },
+   "peerDependencies": {
+-    "react": "^16.8 || ^17.0 || ^18.0",
+-    "react-dom": "^16.8 || ^17.0 || ^18.0"
++    "react": "^16.8 || ^17.0 || ^18.0 || ^19.0",
++    "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0"
+   },
+   "peerDependenciesMeta": {
+     "react-dom": {
+       "optional": true
+     }
+   }
+}
+\ No newline at end of file

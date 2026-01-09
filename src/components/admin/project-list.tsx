@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
@@ -46,9 +47,9 @@ export function ProjectList() {
 
   if (isLoading) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
-          <Skeleton key={i} className="h-12 w-full" />
+          <Skeleton key={i} className="h-24 w-full" />
         ))}
       </div>
     );
@@ -57,43 +58,68 @@ export function ProjectList() {
   if (error) {
     return <p className="text-destructive">Error loading projects: {error.message}</p>;
   }
+  
+  if (!projects || projects.length === 0) {
+      return <div className="text-center text-muted-foreground py-10">No projects found.</div>
+  }
 
   return (
-    <div className="rounded-md border">
+    <>
+      {/* Desktop View */}
+      <div className="hidden md:block rounded-md border">
         <Table>
-        <TableHeader>
-            <TableRow>
-            <TableHead>Project Name</TableHead>
-            <TableHead>Location</TableHead>
-            <TableHead>Budget</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Assigned Manager</TableHead>
-            </TableRow>
-        </TableHeader>
-        <TableBody>
-            {projects && projects.length > 0 ? (
-            projects.map((project) => (
-                <TableRow key={project.id} onClick={() => handleRowClick(project.id)} className="cursor-pointer">
-                <TableCell className="font-medium">{project.name}</TableCell>
-                <TableCell>{project.location}</TableCell>
-                <TableCell>${project.budget_limit.toLocaleString()}</TableCell>
-                <TableCell>
-                    <Badge variant={project.status === 'active' ? 'default' : 'secondary'}>{project.status}</Badge>
-                </TableCell>
-                <TableCell>
-                    <ManagerName managerId={project.assigned_manager_id} />
-                </TableCell>
-                </TableRow>
-            ))
-            ) : (
-            <TableRow>
-                <TableCell colSpan={5} className="text-center">
-                No projects found.
-                </TableCell>
-            </TableRow>
-            )}
-        </TableBody>
+          <TableHeader>
+              <TableRow>
+              <TableHead>Project Name</TableHead>
+              <TableHead>Location</TableHead>
+              <TableHead>Budget</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Assigned Manager</TableHead>
+              </TableRow>
+          </TableHeader>
+          <TableBody>
+              {projects.map((project) => (
+                  <TableRow key={project.id} onClick={() => handleRowClick(project.id)} className="cursor-pointer">
+                  <TableCell className="font-medium">{project.name}</TableCell>
+                  <TableCell>{project.location}</TableCell>
+                  <TableCell>${project.budget_limit.toLocaleString()}</TableCell>
+                  <TableCell>
+                      <Badge variant={project.status === 'active' ? 'default' : 'secondary'}>{project.status}</Badge>
+                  </TableCell>
+                  <TableCell>
+                      <ManagerName managerId={project.assigned_manager_id} />
+                  </TableCell>
+                  </TableRow>
+              ))}
+          </TableBody>
         </Table>
-    </div>
+      </div>
+
+      {/* Mobile View */}
+      <div className="md:hidden space-y-4">
+        {projects.map((project) => (
+            <Card key={project.id} onClick={() => handleRowClick(project.id)} className="cursor-pointer">
+                <CardHeader>
+                    <CardTitle>{project.name}</CardTitle>
+                    <CardDescription>{project.location}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                     <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Status</span>
+                        <Badge variant={project.status === 'active' ? 'default' : 'secondary'}>{project.status}</Badge>
+                    </div>
+                     <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Budget</span>
+                        <span className="font-medium">${project.budget_limit.toLocaleString()}</span>
+                    </div>
+                     <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Manager</span>
+                        <span className="font-medium"><ManagerName managerId={project.assigned_manager_id} /></span>
+                    </div>
+                </CardContent>
+            </Card>
+        ))}
+      </div>
+    </>
   );
 }

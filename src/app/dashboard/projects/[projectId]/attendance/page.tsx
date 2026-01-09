@@ -75,7 +75,7 @@ function AttendanceList() {
                 placeholder="Search by worker name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-sm"
+                className="max-w-full sm:max-w-sm"
             />
             {sortedDates.length === 0 ? (
                  <div className="flex items-center justify-center h-48 text-sm text-muted-foreground">
@@ -95,9 +95,9 @@ function AttendanceList() {
                         return (
                             <AccordionItem key={date} value={date}>
                                 <AccordionTrigger>
-                                    <div className="flex justify-between w-full pr-4">
+                                    <div className="flex justify-between w-full pr-4 text-left">
                                         <span className="font-semibold">{format(new Date(date), 'MMMM d, yyyy')}</span>
-                                        <span className="text-muted-foreground">{presentCount} worker(s) present</span>
+                                        <span className="text-muted-foreground text-right pl-2">{presentCount} worker(s) present</span>
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent>
@@ -127,8 +127,8 @@ export default function AttendancePage() {
   
   return (
     <>
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold md:text-2xl font-headline">Attendance</h1>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <h1 className="text-lg font-semibold md:text-2xl font-headline self-start">Attendance</h1>
         <AddAttendanceModal projectId={projectId} />
       </div>
       <Card>

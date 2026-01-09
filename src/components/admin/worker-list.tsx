@@ -14,11 +14,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 import { RecordPaymentModal } from './record-payment-modal';
-import { UpdateWorkerModal } from './update-worker-modal';
 
 interface WorkerListProps {
   view?: 'all' | 'payroll';
@@ -37,9 +37,9 @@ export function WorkerList({ view = 'all' }: WorkerListProps) {
 
   if (isLoading) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-4">
         {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-12 w-full" />
+          <Skeleton key={i} className="h-20 w-full" />
         ))}
       </div>
     );
@@ -49,70 +49,115 @@ export function WorkerList({ view = 'all' }: WorkerListProps) {
     return <p className="text-destructive">Error loading workers: {error.message}</p>;
   }
 
+  if (!workers || workers.length === 0) {
+      return <div className="text-center text-muted-foreground py-10">No workers found.</div>
+  }
+
   const handleRowClick = (workerId: string) => {
-    if (view === 'all') {
-      router.push(`/admin/workers/${workerId}`);
-    }
+    router.push(`/admin/workers/${workerId}`);
   };
 
-  const renderRow = (worker: Worker) => {
-    if (view === 'payroll') {
-        return (
-            <TableRow key={worker.id}>
+  const renderPayrollView = () => (
+    <>
+      {/* Desktop Payroll View */}
+      <div className="hidden md:block rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Worker Name</TableHead>
+              <TableHead>Skill</TableHead>
+              <TableHead className="text-right">Net Payable</TableHead>
+              <TableHead className="text-center">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {workers.map((worker) => (
+              <TableRow key={worker.id}>
                 <TableCell className="font-medium">{worker.name}</TableCell>
                 <TableCell>{worker.skill}</TableCell>
                 <TableCell className="text-right">
-                    <Badge variant={worker.current_balance > 0 ? 'destructive' : 'secondary'}>
+                  <Badge variant={worker.current_balance > 0 ? 'destructive' : 'secondary'}>
                     ${worker.current_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </Badge>
+                  </Badge>
                 </TableCell>
                 <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
-                    <RecordPaymentModal worker={worker} />
+                  <RecordPaymentModal worker={worker} />
                 </TableCell>
-            </TableRow>
-        )
-    }
-
-    return (
-        <TableRow key={worker.id} onClick={() => handleRowClick(worker.id)} className="cursor-pointer">
-            <TableCell className="font-medium">{worker.name}</TableCell>
-            <TableCell>{worker.skill}</TableCell>
-            <TableCell>{worker.phone}</TableCell>
-        </TableRow>
-    )
-  }
-
-  return (
-    <div className="rounded-md border">
-        <Table>
-        <TableHeader>
-           {view === 'payroll' ? (
-              <TableRow>
-                <TableHead>Worker Name</TableHead>
-                <TableHead>Skill</TableHead>
-                <TableHead className="text-right">Net Payable</TableHead>
-                <TableHead className="text-center">Actions</TableHead>
               </TableRow>
-            ) : (
-               <TableRow>
-                <TableHead>Worker Name</TableHead>
-                <TableHead>Skill</TableHead>
-                <TableHead>Phone</TableHead>
-              </TableRow>
-            )}
-        </TableHeader>
-        <TableBody>
-            {workers && workers.length > 0 ? (
-            workers.map((worker) => renderRow(worker))
-            ) : (
-            <TableRow>
-                <TableCell colSpan={view === 'payroll' ? 4 : 3} className="text-center">
-                No workers found.
-                </TableCell>
-            </TableRow>
-            )}
-        </TableBody>
+            ))}
+          </TableBody>
         </Table>
-    </div>
+      </div>
+
+      {/* Mobile Payroll View */}
+      <div className="md:hidden space-y-4">
+        {workers.map((worker) => (
+          <Card key={worker.id}>
+            <CardHeader>
+                <CardTitle>{worker.name}</CardTitle>
+                <CardDescription>{worker.skill}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+                 <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Net Payable</span>
+                    <Badge variant={worker.current_balance > 0 ? 'destructive' : 'secondary'}>
+                        ${worker.current_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </Badge>
+                </div>
+                 <div className="pt-2" onClick={(e) => e.stopPropagation()}>
+                    <RecordPaymentModal worker={worker} />
+                </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </>
   );
+
+  const renderAllView = () => (
+    <>
+      {/* Desktop All Workers View */}
+      <div className="hidden md:block rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Worker Name</TableHead>
+              <TableHead>Skill</TableHead>
+              <TableHead>Phone</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {workers.map((worker) => (
+              <TableRow key={worker.id} onClick={() => handleRowClick(worker.id)} className="cursor-pointer">
+                <TableCell className="font-medium">{worker.name}</TableCell>
+                <TableCell>{worker.skill}</TableCell>
+                <TableCell>{worker.phone}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+       {/* Mobile All Workers View */}
+      <div className="md:hidden space-y-4">
+        {workers.map((worker) => (
+          <Card key={worker.id} onClick={() => handleRowClick(worker.id)} className="cursor-pointer">
+            <CardHeader>
+                <CardTitle>{worker.name}</CardTitle>
+                <CardDescription>{worker.skill}</CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm">
+                 <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Phone</span>
+                    <span className="font-medium">{worker.phone}</span>
+                </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </>
+  );
+
+
+  return view === 'payroll' ? renderPayrollView() : renderAllView();
 }

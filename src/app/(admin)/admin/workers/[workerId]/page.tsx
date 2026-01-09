@@ -17,18 +17,18 @@ import { useMemo, useEffect, useState } from 'react';
 function WorkerHeader({ worker, isLoading }: { worker: Worker | null, isLoading: boolean }) {
     if (isLoading || !worker) {
         return (
-            <div className="flex justify-between items-start">
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                 <div className="space-y-2">
                     <Skeleton className="h-8 w-48" />
                     <Skeleton className="h-6 w-32" />
                 </div>
-                <Skeleton className="h-10 w-24" />
+                <Skeleton className="h-10 w-full sm:w-32" />
             </div>
         );
     }
     
     return (
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
             <div>
                 <CardTitle>{worker.name}</CardTitle>
                 <CardDescription>
@@ -36,7 +36,7 @@ function WorkerHeader({ worker, isLoading }: { worker: Worker | null, isLoading:
                 </CardDescription>
             </div>
             <UpdateWorkerModal worker={worker}>
-                <Button variant="outline">
+                <Button variant="outline" className="w-full sm:w-auto">
                     <Edit className="mr-2 h-4 w-4" /> Edit Worker
                 </Button>
             </UpdateWorkerModal>
@@ -49,7 +49,7 @@ function WorkerDetails({ worker, isLoading }: { worker: Worker | null, isLoading
         return <Skeleton className="h-24 w-full" />;
     }
     return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div className="space-y-1">
                 <p className="text-muted-foreground">Payment Type</p>
                 <p className="font-medium capitalize">{worker.payment_type}</p>
@@ -70,32 +70,52 @@ function WorkerDetails({ worker, isLoading }: { worker: Worker | null, isLoading
 
 function PayrollHistory({ workerId }: { workerId: string }) {
     const firestore = useFirestore();
-    
-    const transactionsQuery = useMemoFirebase(() => {
-        if (!workerId || !firestore) return null;
-        return query(
-            collection(firestore, `workers/${workerId}/transactions`),
-            orderBy('timestamp', 'desc')
-        );
-    }, [firestore, workerId]);
-
-    const { data: transactions, isLoading: transactionsLoading } = useCollection<Transaction>(transactionsQuery);
-
-    const [projectsMap, setProjectsMap] = useState<Map<string, string>>(new Map());
-    const [projectsMapLoading, setProjectsMapLoading] = useState(true);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [projectsMap, setProjectsMap] = useState<Map<string, Project>>(new Map());
 
     useEffect(() => {
-        if (!firestore) return;
-        const fetchProjects = async () => {
-            setProjectsMapLoading(true);
-            const projectsQuery = query(collection(firestore, 'projects'));
-            const projectSnapshots = await getDocs(projectsQuery);
-            const pMap = new Map(projectSnapshots.docs.map(doc => [doc.id, (doc.data() as Project).name]));
-            setProjectsMap(pMap);
-            setProjectsMapLoading(false);
+        if (!firestore || !workerId) return;
+
+        const fetchAllData = async () => {
+            setIsLoading(true);
+            try {
+                // Fetch all projects to create a map
+                const projectsQuery = query(collection(firestore, 'projects'));
+                const projectsSnapshot = await getDocs(projectsQuery);
+                const pMap = new Map(projectsSnapshot.docs.map(doc => [doc.id, doc.data() as Project]));
+                setProjectsMap(pMap);
+                
+                // Query 1: Get settlement transactions from the worker's subcollection
+                const settlementsQuery = query(collection(firestore, `workers/${workerId}/transactions`));
+                const settlementsSnapshot = await getDocs(settlementsQuery);
+                const settlementTxs = settlementsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
+                
+                // Query 2: Get advance transactions from the global collection
+                const advancesQuery = query(collectionGroup(firestore, 'transactions'), where('worker_id', '==', workerId), where('type', '==', 'payout_advance'));
+                const advancesSnapshot = await getDocs(advancesQuery);
+                const advanceTxs = advancesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
+
+                // Combine and sort
+                const allTxs = [...settlementTxs, ...advanceTxs];
+                allTxs.sort((a, b) => {
+                    const dateA = a.timestamp && (a.timestamp as any).toDate ? (a.timestamp as any).toDate() : new Date(0);
+                    const dateB = b.timestamp && (b.timestamp as any).toDate ? (b.timestamp as any).toDate() : new Date(0);
+                    return dateB.getTime() - dateA.getTime();
+                });
+                
+                setTransactions(allTxs);
+
+            } catch (error) {
+                console.error("Error fetching payroll history:", error);
+            } finally {
+                setIsLoading(false);
+            }
         };
-        fetchProjects();
-    }, [firestore]);
+
+        fetchAllData();
+
+    }, [firestore, workerId]);
     
 
     const formatDate = (timestamp: any) => {
@@ -104,7 +124,7 @@ function PayrollHistory({ workerId }: { workerId: string }) {
         return format(date, 'MMM d, yyyy');
     };
     
-     if (transactionsLoading || projectsMapLoading) {
+     if (isLoading) {
         return <Skeleton className="h-40 w-full" />;
     }
 
@@ -115,104 +135,64 @@ function PayrollHistory({ workerId }: { workerId: string }) {
                 <CardDescription>A log of all payments made to this worker.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Project</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Amount</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {transactions && transactions.length > 0 ? (
-                            transactions.map((tx, index) => (
-                                <TableRow key={tx.id || index}>
-                                    <TableCell>{formatDate(tx.timestamp)}</TableCell>
-                                    <TableCell>{tx.project_id ? projectsMap.get(tx.project_id) : 'General Payroll'}</TableCell>
-                                    <TableCell><Badge variant="secondary" className="capitalize">{tx.type.replace('_', ' ')}</Badge></TableCell>
-                                    <TableCell className="font-medium">${tx.amount.toLocaleString()}</TableCell>
-                                </TableRow>
-                            ))
-                        ) : (
-                             <TableRow>
-                                <TableCell colSpan={4} className="h-24 text-center">
-                                    No payment records found.
-                                </TableCell>
+                {/* Desktop View */}
+                <div className="hidden md:block rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Project</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead className="text-right">Amount</TableHead>
                             </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-    );
-}
-
-function AttendanceHistory({ workerId }: { workerId: string }) {
-    const firestore = useFirestore();
-
-    const attendanceQuery = useMemoFirebase(() => {
-        if (!workerId) return null;
-        return query(collection(firestore, 'attendance'), where('worker_id', '==', workerId), orderBy('date', 'desc'));
-    }, [firestore, workerId]);
-
-    const { data: attendances, isLoading } = useCollection<Attendance>(attendanceQuery);
-    
-    const projectsQuery = useMemoFirebase(() => query(collection(firestore, 'projects')), [firestore]);
-    const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
-
-    const projectsMap = useMemo(() => {
-        if (!projects) return new Map();
-        return new Map(projects.map(p => [p.id, p.name]));
-    }, [projects]);
-
-    const formatDate = (timestamp: any) => {
-        if (!timestamp) return 'N/A';
-        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-        return format(date, 'MMM d, yyyy');
-    };
-
-    if (isLoading || projectsLoading) {
-        return <Skeleton className="h-40 w-full" />;
-    }
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Attendance History</CardTitle>
-                <CardDescription>A log of the worker's attendance across all projects.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Project</TableHead>
-                            <TableHead>Status</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {attendances && attendances.length > 0 ? (
-                            attendances.map(att => (
-                                <TableRow key={att.id}>
-                                    <TableCell>{formatDate(att.date)}</TableCell>
-                                    <TableCell>{projectsMap.get(att.project_id) || 'Unknown Project'}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={att.status === 'present' ? 'default' : 'destructive'} className="capitalize">
-                                            {att.status}
-                                        </Badge>
+                        </TableHeader>
+                        <TableBody>
+                            {transactions && transactions.length > 0 ? (
+                                transactions.map((tx, index) => (
+                                    <TableRow key={tx.id || index}>
+                                        <TableCell>{formatDate(tx.timestamp)}</TableCell>
+                                        <TableCell>{tx.project_id ? projectsMap.get(tx.project_id)?.name : 'General Payroll'}</TableCell>
+                                        <TableCell><Badge variant="secondary" className="capitalize">{tx.type.replace('_', ' ')}</Badge></TableCell>
+                                        <TableCell className="text-right font-medium">${tx.amount.toLocaleString()}</TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="h-24 text-center">
+                                        No payment records found.
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        ) : (
-                             <TableRow>
-                                <TableCell colSpan={3} className="h-24 text-center">
-                                    No attendance records found.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+                 {/* Mobile View */}
+                <div className="md:hidden space-y-4">
+                    {transactions && transactions.length > 0 ? (
+                        transactions.map((tx, index) => (
+                            <Card key={tx.id || index}>
+                                <CardHeader>
+                                    <CardTitle>${tx.amount.toLocaleString()}</CardTitle>
+                                    <CardDescription>{formatDate(tx.timestamp)}</CardDescription>
+                                </CardHeader>
+                                <CardContent className="text-sm space-y-2">
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Type</span>
+                                        <Badge variant="secondary" className="capitalize">{tx.type.replace('_', ' ')}</Badge>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Project</span>
+                                        <span>{tx.project_id ? projectsMap.get(tx.project_id)?.name : 'General Payroll'}</span>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))
+                    ) : (
+                        <div className="h-24 text-center flex items-center justify-center text-muted-foreground">
+                            No payment records found.
+                        </div>
+                    )}
+                </div>
             </CardContent>
         </Card>
     );
@@ -251,7 +231,6 @@ export default function WorkerDetailPage() {
             </Card>
             
             <PayrollHistory workerId={workerId} />
-            <AttendanceHistory workerId={workerId} />
         </div>
     );
 }

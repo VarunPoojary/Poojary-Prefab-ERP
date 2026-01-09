@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
@@ -73,13 +74,13 @@ export function TaskList() {
   if (isLoading || projectsLoading) {
     return (
       <div className="space-y-4">
-        <div className="flex gap-4">
-          <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-10 w-48" />
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Skeleton className="h-10 w-full sm:w-48" />
+          <Skeleton className="h-10 w-full sm:w-48" />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-4">
           {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-12 w-full" />
+            <Skeleton key={i} className="h-24 w-full" />
           ))}
         </div>
       </div>
@@ -111,9 +112,9 @@ export function TaskList() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-center gap-4">
         <Select value={projectFilter} onValueChange={setProjectFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Filter by project..." />
           </SelectTrigger>
           <SelectContent>
@@ -124,7 +125,7 @@ export function TaskList() {
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Filter by status..." />
           </SelectTrigger>
           <SelectContent>
@@ -135,7 +136,9 @@ export function TaskList() {
           </SelectContent>
         </Select>
       </div>
-      <div className="rounded-md border">
+
+      {/* Desktop View */}
+      <div className="hidden md:block rounded-md border">
           <Table>
               <TableHeader>
                   <TableRow>
@@ -168,6 +171,34 @@ export function TaskList() {
                   )}
               </TableBody>
           </Table>
+      </div>
+
+      {/* Mobile View */}
+      <div className="md:hidden space-y-4">
+        {filteredTasks.length > 0 ? (
+          filteredTasks.map((task) => (
+             <UpdateTaskModal key={task.id} task={task} projects={projectData || []}>
+                <Card className="cursor-pointer">
+                  <CardHeader>
+                    <CardTitle>{task.title}</CardTitle>
+                    <CardDescription>{projectsMap.get(task.project_id) || 'Unknown Project'}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Status</span>
+                      <Badge variant={getStatusVariant(task.status)}>{task.status}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Due Date</span>
+                      <span className="font-medium">{formatDate(task.expected_completion_date)}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+             </UpdateTaskModal>
+          ))
+        ) : (
+           <div className="text-center text-muted-foreground py-10">No tasks found for the selected filters.</div>
+        )}
       </div>
     </div>
   );

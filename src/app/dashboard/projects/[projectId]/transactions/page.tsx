@@ -34,9 +34,9 @@ function ProjectTransactionList() {
 
     if (transactionsLoading) {
         return (
-            <div className="space-y-2">
+            <div className="space-y-4">
                 {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
+                <Skeleton key={i} className="h-24 w-full" />
                 ))}
             </div>
         );
@@ -72,7 +72,9 @@ function ProjectTransactionList() {
     };
 
     return (
-        <div className="rounded-md border">
+      <>
+        {/* Desktop View */}
+        <div className="hidden md:block rounded-md border">
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -88,7 +90,7 @@ function ProjectTransactionList() {
                     {transactions.map((transaction) => (
                         <TableRow key={transaction.id} >
                             <TableCell>
-                                <Badge variant={getVariantForType(transaction.type)}>{transaction.type}</Badge>
+                                <Badge variant={getVariantForType(transaction.type)}>{transaction.type.replace('_', ' ')}</Badge>
                             </TableCell>
                             <TableCell className="font-medium">${transaction.amount.toLocaleString()}</TableCell>
                             <TableCell>{transaction.category}</TableCell>
@@ -102,6 +104,37 @@ function ProjectTransactionList() {
                 </TableBody>
             </Table>
         </div>
+
+        {/* Mobile View */}
+        <div className="md:hidden space-y-4">
+            {transactions.map((transaction) => (
+                <Card key={transaction.id}>
+                    <CardHeader>
+                        <CardTitle>${transaction.amount.toLocaleString()}</CardTitle>
+                        <CardDescription>{transaction.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-sm space-y-3">
+                         <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Type</span>
+                            <Badge variant={getVariantForType(transaction.type)}>{transaction.type.replace('_', ' ')}</Badge>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">Category</span>
+                            <span>{transaction.category}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">Date</span>
+                            <span>{formatDate(transaction.timestamp)}</span>
+                        </div>
+                         <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Status</span>
+                            <Badge variant={getVariantForStatus(transaction.status)}>{transaction.status}</Badge>
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+      </>
     )
 }
 
@@ -111,7 +144,7 @@ export default function ProjectTransactionsPage() {
     
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
         <Button asChild variant="outline" size="sm">
             <Link href={`/dashboard/projects`}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
