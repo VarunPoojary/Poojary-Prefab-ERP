@@ -5,10 +5,13 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Project, Task } from '@/types/schema';
 import { collection, query } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { UpdateTaskStatusModal } from '@/components/manager/update-task-status-modal';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 
 function TaskCard({ task }: { task: Task }) {
@@ -75,8 +78,14 @@ export default function ProjectTasksPage() {
 
     return (
         <>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-4">
                 <h1 className="text-lg font-semibold md:text-2xl font-headline">Manage Tasks</h1>
+                <Button asChild variant="outline" size="sm">
+                    <Link href={`/dashboard/projects`}>
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Projects
+                    </Link>
+                </Button>
             </div>
             <Accordion type="multiple" defaultValue={['to do', 'in progress']} className="w-full">
                 <TaskListSection title="To Do" tasks={filteredTasks('todo')} isLoading={isLoading} />
