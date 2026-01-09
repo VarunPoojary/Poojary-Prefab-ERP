@@ -23,6 +23,7 @@ function AttendanceList() {
     }, [firestore, projectId]);
     
     const workersQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
         return query(collection(firestore, 'workers'));
     }, [firestore]);
 
