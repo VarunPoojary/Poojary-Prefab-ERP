@@ -78,14 +78,14 @@ export default function ProjectTasksPage() {
 
     return (
         <>
-            <div className="flex items-center justify-between mb-4">
-                <h1 className="text-lg font-semibold md:text-2xl font-headline">Manage Tasks</h1>
+            <div className="flex items-start justify-between mb-4 flex-col gap-4">
                 <Button asChild variant="outline" size="sm">
                     <Link href={`/dashboard/projects`}>
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Back to Projects
                     </Link>
                 </Button>
+                <h1 className="text-lg font-semibold md:text-2xl font-headline">Manage Tasks</h1>
             </div>
             <Accordion type="multiple" defaultValue={['to do', 'in progress']} className="w-full">
                 <TaskListSection title="To Do" tasks={filteredTasks('todo')} isLoading={isLoading} />
