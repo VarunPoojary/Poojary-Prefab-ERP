@@ -2,7 +2,7 @@
 import { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import type { Attendance, Worker } from '@/types/schema';
+import type { Attendance } from '@/types/schema';
 import { collection, query, where } from 'firebase/firestore';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,14 +21,8 @@ function AttendanceList() {
         if (!projectId) return null;
         return query(collection(firestore, 'attendance'), where('project_id', '==', projectId));
     }, [firestore, projectId]);
-    
-    const workersQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'workers'));
-    }, [firestore]);
 
-    const { data: attendances, isLoading: attendanceLoading } = useCollection<Attendance>(attendanceQuery);
-    const { data: workers, isLoading: workersLoading } = useCollection<Worker>(workersQuery);
+    const { data: attendances, isLoading } = useCollection<Attendance>(attendanceQuery);
 
     const groupedAttendance = useMemo(() => {
         if (!attendances) return {};
@@ -41,18 +35,11 @@ function AttendanceList() {
             return acc;
         }, {} as Record<string, Attendance[]>);
     }, [attendances]);
-    
-    const workersMap = useMemo(() => {
-        if (!workers) return new Map();
-        return new Map(workers.map(w => [w.id, w.name]));
-    }, [workers]);
 
     const sortedDates = useMemo(() => {
         return Object.keys(groupedAttendance).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
     }, [groupedAttendance]);
 
-    const isLoading = attendanceLoading || workersLoading;
-    
      if (isLoading) {
         return (
             <div className="space-y-4">
@@ -64,10 +51,9 @@ function AttendanceList() {
     }
     
     const filteredWorkers = (records: Attendance[]) => {
-        return records.filter(record => {
-            const workerName = workersMap.get(record.worker_id) || '';
-            return workerName.toLowerCase().includes(searchTerm.toLowerCase());
-        });
+        return records.filter(record => 
+            record.worker_name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
     };
 
     return (
@@ -86,8 +72,8 @@ function AttendanceList() {
                 <Accordion type="multiple" className="w-full">
                     {sortedDates.map(date => {
                         const records = groupedAttendance[date];
-                        const presentCount = records.filter(r => r.status === 'present').length;
-                        const workersForDate = filteredWorkers(records.filter(r => r.status === 'present'));
+                        const presentWorkers = records.filter(r => r.status === 'present');
+                        const workersForDate = filteredWorkers(presentWorkers);
 
                         if (searchTerm && workersForDate.length === 0) {
                             return null; // Don't show the date if no workers match the search
@@ -98,14 +84,14 @@ function AttendanceList() {
                                 <AccordionTrigger>
                                     <div className="flex justify-between w-full pr-4 text-left">
                                         <span className="font-semibold">{format(new Date(date), 'MMMM d, yyyy')}</span>
-                                        <span className="text-muted-foreground text-right pl-2">{presentCount} worker(s) present</span>
+                                        <span className="text-muted-foreground text-right pl-2">{presentWorkers.length} worker(s) present</span>
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     {workersForDate.length > 0 ? (
                                         <ul className="list-disc pl-5 space-y-1">
                                             {workersForDate.map(record => (
-                                                <li key={record.id}>{workersMap.get(record.worker_id) || 'Unknown Worker'}</li>
+                                                <li key={record.id}>{record.worker_name}</li>
                                             ))}
                                         </ul>
                                     ) : (

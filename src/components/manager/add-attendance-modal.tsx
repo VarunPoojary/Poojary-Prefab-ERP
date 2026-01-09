@@ -55,6 +55,11 @@ function AttendanceForm({ projectId, onSubmitted }: { projectId: string, onSubmi
 
   const workersQuery = useMemoFirebase(() => query(collection(firestore, 'workers')), [firestore]);
   const { data: workers, isLoading: workersLoading } = useCollection<Worker>(workersQuery);
+  
+  const workersMap = useMemo(() => {
+    if (!workers) return new Map();
+    return new Map(workers.map(w => [w.id, w.name]));
+  }, [workers]);
 
   const form = useForm<z.infer<typeof attendanceSchema>>({
     resolver: zodResolver(attendanceSchema),
@@ -91,11 +96,13 @@ function AttendanceForm({ projectId, onSubmitted }: { projectId: string, onSubmi
     Object.entries(data.present_workers).forEach(([key, isPresent]) => {
       if (isPresent) {
         const workerId = key.replace('work_', ''); 
+        const workerName = workersMap.get(workerId);
         
         const docRef = doc(attendanceCollection);
         batch.set(docRef, {
           project_id: projectId,
           worker_id: workerId,
+          worker_name: workerName || 'Unknown Worker',
           date: data.date,
           status: 'present',
           units_worked: 1,

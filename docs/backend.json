@@ -256,6 +256,10 @@
           "type": "string",
           "description": "Reference to Worker."
         },
+        "worker_name": {
+          "type": "string",
+          "description": "The name of the worker (denormalized)."
+        },
         "project_id": {
           "type": "string",
           "description": "Reference to Project."
@@ -274,6 +278,7 @@
         "id",
         "date",
         "worker_id",
+        "worker_name",
         "project_id",
         "status",
         "units_worked"
@@ -371,5 +376,3 @@
     ]
   }
 }
-
-    
