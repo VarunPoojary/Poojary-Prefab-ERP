@@ -16,9 +16,10 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, runTransaction, writeBatch } from 'firebase/firestore';
 import type { Worker } from '@/types/schema';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 const paymentSchema = z.object({
   amount: z.preprocess(
@@ -30,9 +31,10 @@ const paymentSchema = z.object({
 
 interface RecordPaymentModalProps {
   worker: Worker;
+  isFullWidth?: boolean;
 }
 
-export function RecordPaymentModal({ worker }: RecordPaymentModalProps) {
+export function RecordPaymentModal({ worker, isFullWidth = false }: RecordPaymentModalProps) {
   const [open, setOpen] = useState(false);
   const firestore = useFirestore();
   const { user } = useUser();
@@ -61,33 +63,28 @@ export function RecordPaymentModal({ worker }: RecordPaymentModalProps) {
     const transactionsCollectionRef = collection(firestore, `workers/${worker.id}/transactions`);
     
     try {
-      await runTransaction(firestore, async (transaction) => {
-        const workerDoc = await transaction.get(workerRef);
-        if (!workerDoc.exists()) {
-          throw new Error("Worker document not found!");
-        }
+        const batch = writeBatch(firestore);
 
-        const currentBalance = workerDoc.data().current_balance;
-        const newBalance = currentBalance - data.amount;
-        
-        transaction.update(workerRef, { current_balance: newBalance });
-        
+        const newBalance = worker.current_balance - data.amount;
+        batch.update(workerRef, { current_balance: newBalance });
+
         const newTransactionRef = doc(transactionsCollectionRef); 
-        transaction.set(newTransactionRef, {
+        batch.set(newTransactionRef, {
             type: 'payout_settlement',
             amount: data.amount,
             category: 'Payroll',
             description: data.description || `Payment to ${worker.name}`,
             worker_id: worker.id,
-            timestamp: serverTimestamp(),
+            timestamp: new Date(),
             created_by: user.uid,
             status: 'approved'
         });
-      });
+
+        await batch.commit();
       
       toast({
         title: 'Payment Recorded',
-        description: `$${data.amount.toFixed(2)} paid to ${worker.name}. Their balance has been updated and the transaction has been logged.`,
+        description: `$${data.amount.toFixed(2)} paid to ${worker.name}. Their balance has been updated.`,
       });
       
       reset();
@@ -105,7 +102,7 @@ export function RecordPaymentModal({ worker }: RecordPaymentModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">Record Payment</Button>
+        <Button variant="outline" size="sm" className={cn(isFullWidth && 'w-full')}>Record Payment</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

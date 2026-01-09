@@ -105,7 +105,7 @@ export function WorkerList({ view = 'all' }: WorkerListProps) {
                     </Badge>
                 </div>
                  <div className="pt-2" onClick={(e) => e.stopPropagation()}>
-                    <RecordPaymentModal worker={worker} />
+                    <RecordPaymentModal worker={worker} isFullWidth={true} />
                 </div>
             </CardContent>
           </Card>
