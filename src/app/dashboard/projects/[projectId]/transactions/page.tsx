@@ -24,11 +24,12 @@ function ProjectTransactionList() {
     const params = useParams();
     const projectId = params.projectId as string;
     const firestore = useFirestore();
+    const { user } = useUser();
 
     const transactionsQuery = useMemoFirebase(() => {
-        if (!projectId) return null;
+        if (!projectId || !user) return null; // Do not query if there is no user
         return query(collection(firestore, `projects/${projectId}/transactions`));
-    }, [firestore, projectId]);
+    }, [firestore, projectId, user]);
     
     const { data: transactions, isLoading: transactionsLoading } = useCollection<Transaction>(transactionsQuery);
 
