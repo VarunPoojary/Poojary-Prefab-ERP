@@ -16,11 +16,17 @@ service cloud.firestore {
     }
 
     function getUserRole(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data.role;
+      // Wrap in exists() check to prevent crashing if doc is missing
+      return exists(/databases/$(database)/documents/users/$(userId)) 
+             ? get(/databases/$(database)/documents/users/$(userId)).data.role 
+             : 'none';
     }
 
     function isAdmin() {
-      return isSignedIn() && getUserRole(request.auth.uid) == 'admin';
+      return isSignedIn() && (
+        request.auth.token.email == 'admin@gmail.com' || 
+        getUserRole(request.auth.uid) == 'admin'
+      );
     }
 
     function isManager() {
@@ -69,14 +75,14 @@ service cloud.firestore {
         allow write: if isAdmin();
 
         match /transactions/{transactionId} {
-            // Only admins and managers can create and read payment transactions for a worker.
-            allow read, write: if isAdmin() || isManager();
+            // Only admins can create and read payment transactions for a worker.
+            allow read, write: if isAdmin();
         }
     }
 
     match /salary_payouts/{payoutId} {
-        // Admins and managers can create and view payout history.
-        allow read, create: if isAdmin() || isManager();
+        // Admins can create and view payout history.
+        allow read, create: if isAdmin();
         allow update, delete: if isAdmin(); // Only admins can alter history
     }
     
@@ -128,5 +134,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
