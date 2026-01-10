@@ -198,6 +198,99 @@ function PayrollHistory({ workerId }: { workerId: string }) {
     );
 }
 
+function AttendanceHistory({ workerId }: { workerId: string }) {
+    const firestore = useFirestore();
+    const [attendance, setAttendance] = useState<Attendance[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [projectsMap, setProjectsMap] = useState<Map<string, Project>>(new Map());
+
+    const attendanceQuery = useMemoFirebase(() => {
+        if (!workerId) return null;
+        return query(collection(firestore, 'attendance'), where('worker_id', '==', workerId), orderBy('date', 'desc'));
+    }, [firestore, workerId]);
+    
+    const { data: attendanceData, isLoading: attendanceLoading } = useCollection<Attendance>(attendanceQuery);
+    
+    useEffect(() => {
+        if (!firestore) return;
+
+        const fetchProjects = async () => {
+            if (attendanceLoading) return;
+
+            setIsLoading(true);
+            try {
+                // Fetch all projects to create a map for project names
+                const projectsQuery = query(collection(firestore, 'projects'));
+                const projectsSnapshot = await getDocs(projectsQuery);
+                const pMap = new Map(projectsSnapshot.docs.map(doc => [doc.id, doc.data() as Project]));
+                setProjectsMap(pMap);
+                setAttendance(attendanceData || []);
+            } catch (error) {
+                console.error("Error fetching projects for attendance:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchProjects();
+    }, [firestore, attendanceData, attendanceLoading]);
+
+    const formatDate = (timestamp: any) => {
+        if (!timestamp) return 'N/A';
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        return format(date, 'MMM d, yyyy');
+    };
+
+    if (isLoading || attendanceLoading) {
+        return <Skeleton className="h-40 w-full" />;
+    }
+    
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Attendance History</CardTitle>
+                <CardDescription>A log of all attendance records for this worker.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <div className="rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Project</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Units Worked</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {attendance.length > 0 ? (
+                                attendance.map((record) => (
+                                    <TableRow key={record.id}>
+                                        <TableCell>{formatDate(record.date)}</TableCell>
+                                        <TableCell>{projectsMap.get(record.project_id)?.name || 'Unknown Project'}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={record.status === 'present' ? 'default' : 'secondary'} className="capitalize">
+                                                {record.status}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">{record.units_worked}</TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="h-24 text-center">
+                                        No attendance records found.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 
 export default function WorkerDetailPage() {
     const params = useParams();
@@ -230,6 +323,7 @@ export default function WorkerDetailPage() {
                 </CardContent>
             </Card>
             
+            <AttendanceHistory workerId={workerId} />
             <PayrollHistory workerId={workerId} />
         </div>
     );
