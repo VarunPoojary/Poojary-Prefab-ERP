@@ -61,6 +61,10 @@
           "type": "number",
           "description": "The budget limit for the project."
         },
+        "utilised_budget": {
+          "type": "number",
+          "description": "The total utilised budget for the project."
+        },
         "assigned_manager_id": {
           "type": "string",
           "description": "Reference to User assigned as manager."

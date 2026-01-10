@@ -15,6 +15,7 @@ export interface Project {
   budget_limit: number;
   assigned_manager_id: string;
   status: 'active' | 'completed';
+  utilised_budget?: number;
 }
 
 export interface Worker {
