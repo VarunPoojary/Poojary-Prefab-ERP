@@ -22,7 +22,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
     // If auth state is determined and there's no user, redirect to login.
     if (!user) {
-      router.replace('/login');
+      router.replace('/');
       return;
     }
 
@@ -33,7 +33,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
         const userData = docSnap.data() as User;
         // If a manager tries to access an admin-only route, redirect them.
         if (pathname.startsWith('/admin') && userData.role !== 'admin') {
-          router.replace('/dashboard');
+          router.replace('/dashboard/projects');
         } else {
           // The user's role is permitted for this route.
           setIsAuthorized(true);
@@ -41,11 +41,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       } else {
          // This case is unlikely if signup is handled correctly, but as a fallback,
          // if the user doc doesn't exist, they can't access protected routes.
-         router.replace('/login');
+         router.replace('/');
       }
     }).catch(() => {
         // If there's an error fetching the user's role, they are not authorized.
-        router.replace('/login');
+        router.replace('/');
     });
 
   }, [isUserLoading, user, firestore, router, pathname]);

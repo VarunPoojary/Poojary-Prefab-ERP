@@ -41,8 +41,9 @@ export function UserNav() {
   }, [user, firestore]);
 
   const handleLogout = async () => {
+    if (!auth) return;
     await signOut(auth);
-    router.push('/login');
+    router.push('/');
   };
 
   if (isUserLoading) {
