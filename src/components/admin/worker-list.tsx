@@ -2,7 +2,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useCollection, useMemoFirebase } from '@/firebase';
+import { useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Worker } from '@/types/schema';
@@ -26,9 +26,14 @@ interface WorkerListProps {
 
 export function WorkerList({ view = 'all' }: WorkerListProps) {
   const firestore = useFirestore();
+  const { user } = useUser();
   const router = useRouter();
   
-  const workersQuery = useMemoFirebase(() => query(collection(firestore, 'workers')), [firestore]);
+  const workersQuery = useMemoFirebase(() => {
+    if (!user) return null; // Do not query if there is no user
+    return query(collection(firestore, 'workers'));
+  }, [firestore, user]);
+
   const {
     data: workers,
     isLoading,
