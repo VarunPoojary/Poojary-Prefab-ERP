@@ -48,8 +48,8 @@ export function RecordPaymentModal({ worker, isFullWidth = false }: RecordPaymen
   } = useForm({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
-      amount: worker.current_balance > 0 ? worker.current_balance : 0,
-      description: `Settlement payment to ${worker.name}`,
+      amount: 0,
+      description: `Payment to ${worker.name}`,
     },
   });
 
@@ -61,7 +61,7 @@ export function RecordPaymentModal({ worker, isFullWidth = false }: RecordPaymen
 
     const workerRef = doc(firestore, 'workers', worker.id);
     const transactionsCollectionRef = collection(firestore, `workers/${worker.id}/transactions`);
-    
+
     try {
         const batch = writeBatch(firestore);
 
@@ -70,14 +70,14 @@ export function RecordPaymentModal({ worker, isFullWidth = false }: RecordPaymen
 
         const newTransactionRef = doc(transactionsCollectionRef); 
         batch.set(newTransactionRef, {
-            type: 'payout_settlement',
+            type: 'payout_advance',
             amount: data.amount,
             category: 'Payroll',
             description: data.description || `Payment to ${worker.name}`,
             worker_id: worker.id,
             timestamp: new Date(),
             created_by: user.uid,
-            status: 'approved'
+            status: 'unapproved'
         });
 
         await batch.commit();
