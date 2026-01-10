@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { WorkerList } from '@/components/admin/worker-list';
 import { AddWorkerModal } from '@/components/admin/add-worker-modal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ResetPayrollModal } from '@/components/admin/reset-payroll-modal';
 
 export default function AdminWorkersPage() {
   return (
@@ -11,7 +12,10 @@ export default function AdminWorkersPage() {
         <h1 className="text-lg font-semibold md:text-2xl font-headline">
           Workers & Payroll
         </h1>
-        <AddWorkerModal />
+        <div className="flex gap-2">
+          <ResetPayrollModal />
+          <AddWorkerModal />
+        </div>
       </div>
       <Tabs defaultValue="payroll">
         <TabsList className="grid w-full grid-cols-2">
