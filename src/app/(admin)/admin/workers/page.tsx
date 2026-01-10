@@ -4,6 +4,8 @@ import { WorkerList } from '@/components/admin/worker-list';
 import { AddWorkerModal } from '@/components/admin/add-worker-modal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ResetPayrollModal } from '@/components/admin/reset-payroll-modal';
+import { PaySalariesModal } from '@/components/admin/pay-salaries-modal';
+import { SalaryHistoryList } from '@/components/admin/salary-history-list';
 
 export default function AdminWorkersPage() {
   return (
@@ -18,8 +20,9 @@ export default function AdminWorkersPage() {
         </div>
       </div>
       <Tabs defaultValue="payroll">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="payroll">Payroll</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="payroll">Worker Balances</TabsTrigger>
+          <TabsTrigger value="salaries">Monthly Salaries</TabsTrigger>
           <TabsTrigger value="all-workers">All Workers</TabsTrigger>
         </TabsList>
         <TabsContent value="payroll">
@@ -32,6 +35,22 @@ export default function AdminWorkersPage() {
             </CardHeader>
             <CardContent>
               <WorkerList view="payroll" />
+            </CardContent>
+          </Card>
+        </TabsContent>
+         <TabsContent value="salaries">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Monthly Salary Payouts</CardTitle>
+                <CardDescription>
+                  Settle all worker balances for the month and view payout history.
+                </CardDescription>
+              </div>
+              <PaySalariesModal />
+            </CardHeader>
+            <CardContent>
+                <SalaryHistoryList />
             </CardContent>
           </Card>
         </TabsContent>
@@ -52,3 +71,5 @@ export default function AdminWorkersPage() {
     </>
   );
 }
+
+    

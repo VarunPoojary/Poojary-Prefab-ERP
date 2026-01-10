@@ -31,7 +31,7 @@ export interface Worker {
 export interface Transaction {
   id: string;
   project_id?: string;
-  type: 'expense' | 'income' | 'payout_advance' | 'payout_settlement';
+  type: 'expense' | 'income' | 'payout_advance' | 'payout_settlement' | 'salary_settlement';
   amount: number;
   category: string;
   description: string;
@@ -61,3 +61,17 @@ export interface Attendance {
   status: 'present' | 'absent';
   units_worked: number;
 }
+
+export interface SalaryPayout {
+  id: string;
+  payout_date: Timestamp;
+  total_amount_paid: number;
+  paid_by: string;
+  paid_workers: {
+    worker_id: string;
+    worker_name: string;
+    amount_paid: number;
+  }[];
+}
+
+    

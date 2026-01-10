@@ -69,9 +69,15 @@ service cloud.firestore {
         allow write: if isAdmin();
 
         match /transactions/{transactionId} {
-            // Only admins can create and read payment transactions for a worker.
-            allow read, write: if isAdmin();
+            // Only admins and managers can create and read payment transactions for a worker.
+            allow read, write: if isAdmin() || isManager();
         }
+    }
+
+    match /salary_payouts/{payoutId} {
+        // Admins and managers can create and view payout history.
+        allow read, create: if isAdmin() || isManager();
+        allow update, delete: if isAdmin(); // Only admins can alter history
     }
     
      match /attendance/{attendanceId} {
@@ -79,7 +85,7 @@ service cloud.firestore {
       allow get: if isAdmin() || (isManager() && isAssignedManager(resource.data.project_id));
         
       // Admins can list all records. Managers must filter by a project_id they are assigned to.
-      allow list: if isAdmin() || (isManager() && get(/databases/$(database)/documents/projects/$(request.query.project_id)).data.assigned_manager_id == request.auth.uid);
+      allow list: if isAdmin() || (isManager() && get(/databases/$(database)/documents/projects/$(request.query.where.project_id.value)).data.assigned_manager_id == request.auth.uid);
         
       // Managers can create attendance records for their projects.
       allow create: if isManager() && isAssignedManager(request.resource.data.project_id);
@@ -122,3 +128,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

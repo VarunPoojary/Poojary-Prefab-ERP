@@ -147,7 +147,7 @@
         "type": {
           "type": "string",
           "description": "The type of transaction.",
-          "enum": ["expense", "income", "payout_advance", "payout_settlement"]
+          "enum": ["expense", "income", "payout_advance", "payout_settlement", "salary_settlement"]
         },
         "amount": {
           "type": "number",
@@ -287,6 +287,57 @@
         "status",
         "units_worked"
       ]
+    },
+     "SalaryPayout": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Salary Payout",
+      "type": "object",
+      "description": "Represents a historical record of a monthly salary payout event.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the payout record."
+        },
+        "payout_date": {
+          "type": "string",
+          "description": "The date the payout was executed.",
+          "format": "date-time"
+        },
+        "total_amount_paid": {
+          "type": "number",
+          "description": "The total amount paid out in this cycle."
+        },
+        "paid_by": {
+          "type": "string",
+          "description": "The UID of the admin or manager who initiated the payout."
+        },
+        "paid_workers": {
+          "type": "array",
+          "description": "An array of objects detailing each worker's payment.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "worker_id": {
+                "type": "string"
+              },
+              "worker_name": {
+                "type": "string"
+              },
+              "amount_paid": {
+                "type": "number"
+              }
+            },
+            "required": ["worker_id", "worker_name", "amount_paid"]
+          }
+        }
+      },
+      "required": [
+        "id",
+        "payout_date",
+        "total_amount_paid",
+        "paid_by",
+        "paid_workers"
+      ]
     }
   },
   "auth": {
@@ -376,7 +427,19 @@
           },
           "description": "Stores payment transactions specific to a worker."
         }
+      },
+      {
+        "path": "/salary_payouts/{payoutId}",
+        "definition": {
+          "entityName": "SalaryPayout",
+          "schema": {
+            "$ref": "#/backend/entities/SalaryPayout"
+          },
+          "description": "Stores historical records of monthly salary payouts."
+        }
       }
     ]
   }
 }
+
+    
