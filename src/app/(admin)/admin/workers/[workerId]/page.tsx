@@ -56,12 +56,12 @@ function WorkerDetails({ worker, isLoading }: { worker: Worker | null, isLoading
             </div>
             <div className="space-y-1">
                 <p className="text-muted-foreground">Base Rate</p>
-                <p className="font-medium">${worker.base_rate.toLocaleString()}</p>
+                <p className="font-medium">₹{worker.base_rate.toLocaleString()}</p>
             </div>
             <div className="space-y-1">
                 <p className="text-muted-foreground">Current Balance</p>
                 <Badge variant={worker.current_balance > 0 ? 'destructive' : 'secondary'}>
-                    ${worker.current_balance.toLocaleString()}
+                    ₹{worker.current_balance.toLocaleString()}
                 </Badge>
             </div>
         </div>
@@ -153,7 +153,7 @@ function PayrollHistory({ workerId }: { workerId: string }) {
                                         <TableCell>{formatDate(tx.timestamp)}</TableCell>
                                         <TableCell>{tx.project_id ? projectsMap.get(tx.project_id)?.name : 'General Payroll'}</TableCell>
                                         <TableCell><Badge variant="secondary" className="capitalize">{tx.type.replace('_', ' ')}</Badge></TableCell>
-                                        <TableCell className="text-right font-medium">${tx.amount.toLocaleString()}</TableCell>
+                                        <TableCell className="text-right font-medium">₹{tx.amount.toLocaleString()}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (
@@ -172,7 +172,7 @@ function PayrollHistory({ workerId }: { workerId: string }) {
                         transactions.map((tx, index) => (
                             <Card key={tx.id || index}>
                                 <CardHeader>
-                                    <CardTitle>${tx.amount.toLocaleString()}</CardTitle>
+                                    <CardTitle>₹{tx.amount.toLocaleString()}</CardTitle>
                                     <CardDescription>{formatDate(tx.timestamp)}</CardDescription>
                                 </CardHeader>
                                 <CardContent className="text-sm space-y-2">

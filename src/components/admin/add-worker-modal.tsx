@@ -153,7 +153,7 @@ export function AddWorkerModal() {
                     <Controller
                         name="base_rate"
                         control={control}
-                        render={({ field }) => <Input id="base_rate" type="number" {...field} />}
+                        render={({ field }) => <Input id="base_rate" type="number" placeholder="₹0" {...field} />}
                     />
                 </div>
             </div>

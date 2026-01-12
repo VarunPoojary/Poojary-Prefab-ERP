@@ -181,7 +181,7 @@ export function ExpenseList() {
                       <TableRow key={transaction.id}>
                           <TableCell className="font-medium">{projectsMap.get(transaction.project_id) || 'Unknown'}</TableCell>
                           <TableCell>{formatDate(transaction.timestamp)}</TableCell>
-                          <TableCell>${transaction.amount.toLocaleString()}</TableCell>
+                          <TableCell>₹{transaction.amount.toLocaleString()}</TableCell>
                           <TableCell>{transaction.category}</TableCell>
                           <TableCell>
                             <Badge variant={getStatusVariant(transaction.status)}>{transaction.status}</Badge>
@@ -219,7 +219,7 @@ export function ExpenseList() {
           filteredTransactions.map((transaction) => (
             <Card key={transaction.id}>
               <CardHeader>
-                <CardTitle>${transaction.amount.toLocaleString()}</CardTitle>
+                <CardTitle>₹{transaction.amount.toLocaleString()}</CardTitle>
                 <CardDescription>{transaction.description}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">

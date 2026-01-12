@@ -82,7 +82,7 @@ export function ProjectList() {
                   <TableRow key={project.id} onClick={() => handleRowClick(project.id)} className="cursor-pointer">
                   <TableCell className="font-medium">{project.name}</TableCell>
                   <TableCell>{project.location}</TableCell>
-                  <TableCell>${project.budget_limit.toLocaleString()}</TableCell>
+                  <TableCell>₹{project.budget_limit.toLocaleString()}</TableCell>
                   <TableCell>
                       <Badge variant={project.status === 'active' ? 'default' : 'secondary'}>{project.status}</Badge>
                   </TableCell>
@@ -110,7 +110,7 @@ export function ProjectList() {
                     </div>
                      <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Budget</span>
-                        <span className="font-medium">${project.budget_limit.toLocaleString()}</span>
+                        <span className="font-medium">₹{project.budget_limit.toLocaleString()}</span>
                     </div>
                      <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Manager</span>

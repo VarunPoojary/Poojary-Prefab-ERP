@@ -82,7 +82,7 @@ export function WorkerList({ view = 'all' }: WorkerListProps) {
                 <TableCell>{worker.skill}</TableCell>
                 <TableCell className="text-right">
                   <Badge variant={worker.current_balance > 0 ? 'destructive' : 'secondary'}>
-                    ${worker.current_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ₹{worker.current_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
@@ -106,7 +106,7 @@ export function WorkerList({ view = 'all' }: WorkerListProps) {
                  <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Net Payable</span>
                     <Badge variant={worker.current_balance > 0 ? 'destructive' : 'secondary'}>
-                        ${worker.current_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ₹{worker.current_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Badge>
                 </div>
                  <div className="pt-2" onClick={(e) => e.stopPropagation()}>

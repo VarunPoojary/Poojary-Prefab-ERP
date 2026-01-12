@@ -60,7 +60,7 @@ function AdminStats() {
             <Skeleton className="h-8 w-3/4" />
           ) : (
             <div className="text-2xl font-bold">
-              ${totalIncome.toLocaleString()}
+              ₹{totalIncome.toLocaleString()}
             </div>
           )}
         </CardContent>
@@ -75,7 +75,7 @@ function AdminStats() {
             <Skeleton className="h-8 w-3/4" />
           ) : (
             <div className="text-2xl font-bold">
-              ${totalExpenses.toLocaleString()}
+              ₹{totalExpenses.toLocaleString()}
             </div>
           )}
         </CardContent>

@@ -52,7 +52,7 @@ export function SalaryHistoryList() {
                     <AccordionTrigger>
                         <div className="flex justify-between w-full pr-4 text-left">
                             <span className="font-semibold">{formatDate(payout.payout_date)}</span>
-                            <span className="text-right pl-2 font-bold text-primary">${payout.total_amount_paid.toLocaleString()}</span>
+                            <span className="text-right pl-2 font-bold text-primary">₹{payout.total_amount_paid.toLocaleString()}</span>
                         </div>
                     </AccordionTrigger>
                     <AccordionContent>
@@ -67,7 +67,7 @@ export function SalaryHistoryList() {
                                 {payout.paid_workers.map(worker => (
                                     <TableRow key={worker.worker_id}>
                                         <TableCell>{worker.worker_name}</TableCell>
-                                        <TableCell className="text-right">${worker.amount_paid.toLocaleString()}</TableCell>
+                                        <TableCell className="text-right">₹{worker.amount_paid.toLocaleString()}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -78,5 +78,3 @@ export function SalaryHistoryList() {
         </Accordion>
     );
 }
-
-    

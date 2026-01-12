@@ -93,7 +93,7 @@ function ProjectTransactionList() {
                             <TableCell>
                                 <Badge variant={getVariantForType(transaction.type)}>{transaction.type.replace('_', ' ')}</Badge>
                             </TableCell>
-                            <TableCell className="font-medium">${transaction.amount.toLocaleString()}</TableCell>
+                            <TableCell className="font-medium">₹{transaction.amount.toLocaleString()}</TableCell>
                             <TableCell>{transaction.category}</TableCell>
                             <TableCell>{transaction.description}</TableCell>
                             <TableCell>{formatDate(transaction.timestamp)}</TableCell>
@@ -111,7 +111,7 @@ function ProjectTransactionList() {
             {transactions.map((transaction) => (
                 <Card key={transaction.id}>
                     <CardHeader>
-                        <CardTitle>${transaction.amount.toLocaleString()}</CardTitle>
+                        <CardTitle>₹{transaction.amount.toLocaleString()}</CardTitle>
                         <CardDescription>{transaction.description}</CardDescription>
                     </CardHeader>
                     <CardContent className="text-sm space-y-3">

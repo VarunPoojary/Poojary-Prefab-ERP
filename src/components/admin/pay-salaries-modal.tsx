@@ -88,7 +88,7 @@ export function PaySalariesModal() {
       
       toast({
         title: 'Salaries Paid Successfully',
-        description: `Total payout of $${totalPayout.toLocaleString()} has been processed for ${monthlyWorkers.length} workers.`,
+        description: `Total payout of ₹${totalPayout.toLocaleString()} has been processed for ${monthlyWorkers.length} workers.`,
       });
       setOpen(false);
 
@@ -117,7 +117,7 @@ export function PaySalariesModal() {
                 <div className="space-y-4">
                     <div className="text-lg font-bold flex justify-between">
                         <span>Total Payout:</span>
-                        <span>${totalPayout.toLocaleString()}</span>
+                        <span>₹{totalPayout.toLocaleString()}</span>
                     </div>
                     <ScrollArea className="h-64 border rounded-md">
                          <Table>
@@ -131,7 +131,7 @@ export function PaySalariesModal() {
                                 {monthlyWorkers.length > 0 ? monthlyWorkers.map(worker => (
                                     <TableRow key={worker.id}>
                                         <TableCell>{worker.name}</TableCell>
-                                        <TableCell className="text-right">${worker.current_balance.toLocaleString()}</TableCell>
+                                        <TableCell className="text-right">₹{worker.current_balance.toLocaleString()}</TableCell>
                                     </TableRow>
                                 )) : (
                                     <TableRow>
@@ -154,5 +154,3 @@ export function PaySalariesModal() {
     </Dialog>
   );
 }
-
-    

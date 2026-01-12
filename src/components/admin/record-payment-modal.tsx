@@ -84,7 +84,7 @@ export function RecordPaymentModal({ worker, isFullWidth = false }: RecordPaymen
       
       toast({
         title: 'Payment Recorded',
-        description: `$${data.amount.toFixed(2)} paid to ${worker.name}. Their balance has been updated.`,
+        description: `₹${data.amount.toFixed(2)} paid to ${worker.name}. Their balance has been updated.`,
       });
       
       reset();
@@ -137,7 +137,7 @@ export function RecordPaymentModal({ worker, isFullWidth = false }: RecordPaymen
             </div>
              <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right font-semibold">Current Balance</Label>
-                <span className="col-span-3 font-bold text-lg">${worker.current_balance.toFixed(2)}</span>
+                <span className="col-span-3 font-bold text-lg">₹{worker.current_balance.toFixed(2)}</span>
             </div>
           </div>
           <DialogFooter>

@@ -144,7 +144,7 @@ export function CreateProjectModal() {
               <Controller
                 name="budget_limit"
                 control={control}
-                render={({ field }) => <Input id="budget_limit" type="number" {...field} className="col-span-3" />}
+                render={({ field }) => <Input id="budget_limit" type="number" placeholder="₹0" {...field} className="col-span-3" />}
               />
               {errors.budget_limit && <p className="col-span-4 text-destructive text-sm text-right">{errors.budget_limit.message}</p>}
             </div>

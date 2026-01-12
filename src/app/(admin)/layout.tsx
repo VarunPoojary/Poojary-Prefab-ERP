@@ -96,18 +96,6 @@ export default function AdminLayout({
                 <MobileAwareMenuItems />
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <Link href="/dashboard/settings">
-                  <SidebarMenuButton isActive={pathname === '/dashboard/settings'} tooltip="Settings">
-                    <Settings />
-                    <span>Settings</span>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarFooter>
         </Sidebar>
         <SidebarInset>
           <header className="flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">

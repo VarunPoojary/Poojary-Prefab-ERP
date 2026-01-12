@@ -81,7 +81,7 @@ function FinancialsCard({ project }: { project: Project }) {
                     <div className="flex justify-between items-center mb-1">
                         <span className="text-sm text-muted-foreground">Budget Utilisation</span>
                          <span className="text-sm font-medium">
-                            ${utilisedBudget.toLocaleString()} / ${budgetLimit.toLocaleString()}
+                            ₹{utilisedBudget.toLocaleString()} / ₹{budgetLimit.toLocaleString()}
                         </span>
                     </div>
                      <Progress value={utilisationPercentage} className="h-2" />
@@ -89,11 +89,11 @@ function FinancialsCard({ project }: { project: Project }) {
                 <div className="text-sm">
                     <div className="flex justify-between">
                         <span className="text-muted-foreground">Remaining Budget</span>
-                        <span className="font-semibold">${remainingBudget.toLocaleString()}</span>
+                        <span className="font-semibold">₹{remainingBudget.toLocaleString()}</span>
                     </div>
                      <div className="flex justify-between mt-1">
                         <span className="text-muted-foreground">Total Approved Income</span>
-                        <span className="font-medium text-green-600">${totalIncome.toLocaleString()}</span>
+                        <span className="font-medium text-green-600">₹{totalIncome.toLocaleString()}</span>
                     </div>
                 </div>
             </CardContent>
