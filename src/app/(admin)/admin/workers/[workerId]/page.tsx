@@ -92,17 +92,18 @@ function PayrollHistory({ workerId }: { workerId: string }) {
                 const settlementTxs = settlementsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
                 
                 // Query 2: Get advance transactions from the global collection
-                const advancesQuery = query(collectionGroup(firestore, 'transactions'), where('worker_id', '==', workerId), where('type', '==', 'payout_advance'));
-                const advancesSnapshot = await getDocs(advancesQuery);
-                const advanceTxs = advancesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
+                // const advancesQuery = query(collectionGroup(firestore, 'transactions'), where('worker_id', '==', workerId), where('type', '==', 'payout_advance'));
+                // const advancesSnapshot = await getDocs(advancesQuery);
+                // const advanceTxs = advancesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction));
 
                 // Combine and sort
-                const allTxs = [...settlementTxs, ...advanceTxs];
-                allTxs.sort((a, b) => {
-                    const dateA = a.timestamp && (a.timestamp as any).toDate ? (a.timestamp as any).toDate() : new Date(0);
-                    const dateB = b.timestamp && (b.timestamp as any).toDate ? (b.timestamp as any).toDate() : new Date(0);
-                    return dateB.getTime() - dateA.getTime();
-                });
+                // const allTxs = [...settlementTxs, ...advanceTxs];
+                // allTxs.sort((a, b) => {
+                //     const dateA = a.timestamp && (a.timestamp as any).toDate ? (a.timestamp as any).toDate() : new Date(0);
+                //     const dateB = b.timestamp && (b.timestamp as any).toDate ? (b.timestamp as any).toDate() : new Date(0);
+                //     return dateB.getTime() - dateA.getTime();
+                // });
+                const allTxs = [...settlementTxs];
                 
                 setTransactions(allTxs);
 
