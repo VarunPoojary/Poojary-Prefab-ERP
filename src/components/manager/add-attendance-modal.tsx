@@ -26,8 +26,6 @@ import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger, DrawerFooter, DrawerClose } from '@/components/ui/drawer';
 
 const attendanceSchema = z.object({
   date: z.date({
@@ -137,7 +135,7 @@ function AttendanceForm({ projectId, onSubmitted }: { projectId: string, onSubmi
 
   return (
      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="px-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="px-4 sm:px-0">
           <div className="grid gap-4 py-4">
               <FormField
                 control={form.control}
@@ -207,7 +205,7 @@ function AttendanceForm({ projectId, onSubmitted }: { projectId: string, onSubmi
                   <FormMessage>{form.formState.errors.present_workers?.message}</FormMessage>
               </div>
           </div>
-          <DialogFooter className="sm:justify-end pb-4">
+          <DialogFooter className="sm:justify-end pb-4 sm:pb-0">
               <Button type="submit" disabled={form.formState.isSubmitting} className="w-full sm:w-auto">
               {form.formState.isSubmitting ? 'Saving...' : 'Save Attendance'}
               </Button>
@@ -219,27 +217,6 @@ function AttendanceForm({ projectId, onSubmitted }: { projectId: string, onSubmi
 
 export function AddAttendanceModal({ projectId }: AddAttendanceModalProps) {
   const [open, setOpen] = useState(false);
-  const isMobile = useIsMobile();
-
-  if (isMobile) {
-    return (
-       <Drawer open={open} onOpenChange={setOpen}>
-        <DrawerTrigger asChild>
-            <Button className="w-full sm:w-auto">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Daily Attendance
-            </Button>
-        </DrawerTrigger>
-        <DrawerContent>
-            <DrawerHeader className="text-left">
-                <DrawerTitle>Mark Daily Attendance</DrawerTitle>
-                <DrawerDescription>Select a date and check the workers who were present.</DrawerDescription>
-            </DrawerHeader>
-            <AttendanceForm projectId={projectId} onSubmitted={() => setOpen(false)} />
-        </DrawerContent>
-      </Drawer>
-    )
-  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
