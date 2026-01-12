@@ -33,9 +33,9 @@ function ManagerProjectView({ projects, userRole }: { projects: Project[], userR
   }
 
   const actions = (projectId: string) => [
-    { href: `/dashboard/projects/${projectId}/attendance`, label: 'Attendance', icon: CalendarCheck },
-    { href: `/dashboard/projects/${projectId}/tasks`, label: 'Tasks', icon: ClipboardCheck },
-    { href: `/dashboard/projects/${projectId}/transactions`, label: 'Expenses', icon: ArrowLeftRight },
+    { href: `/dashboard/projects/${projectId}/attendance`, label: 'Attendance', icon: CalendarCheck, disabled: true },
+    { href: `/dashboard/projects/${projectId}/tasks`, label: 'Tasks', icon: ClipboardCheck, disabled: false },
+    { href: `/dashboard/projects/${projectId}/transactions`, label: 'Expenses', icon: ArrowLeftRight, disabled: false },
   ];
 
   return (
@@ -51,12 +51,14 @@ function ManagerProjectView({ projects, userRole }: { projects: Project[], userR
               {actions(project.id).map((action) => (
                 <Button
                   key={action.label}
-                  asChild
+                  asChild={!action.disabled}
                   variant="default"
                   size="sm"
                   className="w-full sm:flex-1"
+                  disabled={action.disabled}
+                  aria-disabled={action.disabled}
                 >
-                  <Link href={action.href}>
+                  <Link href={action.disabled ? '#' : action.href} className={action.disabled ? 'pointer-events-none' : ''}>
                     <action.icon />
                     {action.label}
                   </Link>
