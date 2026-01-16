@@ -207,7 +207,7 @@ function AttendanceHistory({ workerId }: { workerId: string }) {
         // Query for present records only and order by date
         return query(
             collection(firestore, 'attendance'), 
-            where('worker_id', '==', workerId),
+            where('worker_id', '==', workerId)
         );
     }, [firestore, workerId]);
     
@@ -230,7 +230,8 @@ function AttendanceHistory({ workerId }: { workerId: string }) {
                 <CardDescription>A log of all days this worker was marked present.</CardDescription>
             </CardHeader>
             <CardContent>
-                 <div className="rounded-md border">
+                 {/* Desktop View */}
+                 <div className="hidden md:block rounded-md border">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -243,7 +244,7 @@ function AttendanceHistory({ workerId }: { workerId: string }) {
                                 attendanceData.map((record) => (
                                     <TableRow key={record.id}>
                                         <TableCell>{formatDate(record.date)}</TableCell>
-                                        <TableCell>{record.project_name}</TableCell>
+                                        <TableCell>{record.project_name || 'N/A'}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (
@@ -255,6 +256,23 @@ function AttendanceHistory({ workerId }: { workerId: string }) {
                             )}
                         </TableBody>
                     </Table>
+                </div>
+                 {/* Mobile View */}
+                <div className="md:hidden space-y-4">
+                    {attendanceData && attendanceData.length > 0 ? (
+                        attendanceData.map((record) => (
+                            <Card key={record.id}>
+                                <CardContent className="p-4 flex justify-between items-center text-sm">
+                                    <span className="font-medium">{formatDate(record.date)}</span>
+                                    <span className="text-muted-foreground">{record.project_name || 'N/A'}</span>
+                                </CardContent>
+                            </Card>
+                        ))
+                    ) : (
+                        <div className="h-24 text-center flex items-center justify-center text-muted-foreground">
+                            No 'present' attendance records found.
+                        </div>
+                    )}
                 </div>
             </CardContent>
         </Card>

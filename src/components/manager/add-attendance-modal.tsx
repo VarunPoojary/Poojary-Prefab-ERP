@@ -155,7 +155,7 @@ function AttendanceForm({ projectId, onSubmitted }: { projectId: string, onSubmi
                     <FormItem>
                         <Label>Date</Label>
                           <div>
-                            <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                            <Popover modal={true} open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                                 <PopoverTrigger asChild>
                                 <Button
                                     variant={"outline"}
