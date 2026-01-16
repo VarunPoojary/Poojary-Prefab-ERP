@@ -16,6 +16,7 @@ function AttendanceList() {
     const projectId = params.projectId as string;
     const firestore = useFirestore();
     const [searchTerm, setSearchTerm] = useState('');
+    console.log('projectId', projectId);
 
     const attendanceQuery = useMemoFirebase(() => {
         if (!projectId) return null;

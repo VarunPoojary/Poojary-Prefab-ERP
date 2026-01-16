@@ -16,17 +16,11 @@ service cloud.firestore {
     }
 
     function getUserRole(userId) {
-      // Wrap in exists() check to prevent crashing if doc is missing
-      return exists(/databases/$(database)/documents/users/$(userId)) 
-             ? get(/databases/$(database)/documents/users/$(userId)).data.role 
-             : 'none';
+      return get(/databases/$(database)/documents/users/$(userId)).data.role;
     }
 
     function isAdmin() {
-      return isSignedIn() && (
-        request.auth.token.email == 'admin@gmail.com' || 
-        getUserRole(request.auth.uid) == 'admin'
-      );
+      return isSignedIn() && getUserRole(request.auth.uid) == 'admin';
     }
 
     function isManager() {
@@ -56,16 +50,16 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    match /projects/{projectId} {
+     match /projects/{projectId} {
       // Admins can perform any action on projects.
       allow write: if isAdmin();
       
       // Admins can get any project. Managers can only get projects they are assigned to.
-      allow get: if isAdmin() || (isManager() && isAssignedManager(projectId));
+      allow get: if isAdmin() || (isManager() && resource.data.assigned_manager_id == request.auth.uid);
 
       // Only admins are allowed to list all projects.
       // Managers must use a query with a 'where' clause on 'assigned_manager_id'.
-      allow list: if isAdmin();
+      allow list: if isAdmin() || (isManager() && resource.data.assigned_manager_id == request.auth.uid);
     }
     
     match /workers/{workerId} {
@@ -84,20 +78,6 @@ service cloud.firestore {
         // Admins can create and view payout history.
         allow read, create: if isAdmin();
         allow update, delete: if isAdmin(); // Only admins can alter history
-    }
-    
-     match /attendance/{attendanceId} {
-      // Admins can get any record. Managers can get records for their assigned projects.
-      allow get: if isAdmin() || (isManager() && isAssignedManager(resource.data.project_id));
-        
-      // Admins can list all records. Managers must filter by a project_id they are assigned to.
-      allow list: if isAdmin() || (isManager() && get(/databases/$(database)/documents/projects/$(request.query.where.project_id.value)).data.assigned_manager_id == request.auth.uid);
-        
-      // Managers can create attendance records for their projects.
-      allow create: if isManager() && isAssignedManager(request.resource.data.project_id);
-
-      // Only admins can update or delete records.
-      allow update, delete: if isAdmin();
     }
     
     match /transactions/{transactionId} {
@@ -128,9 +108,16 @@ service cloud.firestore {
       allow get, list: if isAdmin() || (isManager() && isAssignedManager(projectId));
     }
     
-    // This rule allows admins to perform collection group queries on 'transactions', 'attendance', and 'tasks'.
+    match /attendance/{attendanceId} {
+      allow get: if isAdmin() || (isManager() && get(/databases/$(database)/documents/projects/$(resource.data.project_id)).data.assigned_manager_id == request.auth.uid);
+      allow list: if isAdmin() || (isManager() && request.query.where.project_id == get(/databases/$(database)/documents/projects/$(request.query.where.project_id)).data.id && get(/databases/$(database)/documents/projects/$(request.query.where.project_id)).data.assigned_manager_id == request.auth.uid);
+      allow create: if isManager();
+      allow update, delete: if isAdmin();
+    }
+    
+    // This rule allows admins to perform collection group queries on 'transactions' and 'tasks'.
     match /{path=**}/{collectionName}/{docId} {
-        allow list: if (collectionName == 'transactions' || collectionName == 'attendance' || collectionName == 'tasks') && isAdmin();
+        allow list: if (collectionName == 'transactions' || collectionName == 'tasks') && isAdmin();
     }
   }
 }

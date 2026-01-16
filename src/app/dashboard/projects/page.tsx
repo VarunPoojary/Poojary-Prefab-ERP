@@ -33,7 +33,7 @@ function ManagerProjectView({ projects, userRole }: { projects: Project[], userR
   }
 
   const actions = (projectId: string) => [
-    { href: `/dashboard/projects/${projectId}/attendance`, label: 'Attendance', icon: CalendarCheck, disabled: true },
+    { href: `/dashboard/projects/${projectId}/attendance`, label: 'Attendance', icon: CalendarCheck, disabled: false },
     { href: `/dashboard/projects/${projectId}/tasks`, label: 'Tasks', icon: ClipboardCheck, disabled: false },
     { href: `/dashboard/projects/${projectId}/transactions`, label: 'Expenses', icon: ArrowLeftRight, disabled: false },
   ];
