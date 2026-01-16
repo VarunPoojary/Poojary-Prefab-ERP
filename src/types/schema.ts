@@ -58,6 +58,7 @@ export interface Attendance {
   worker_id: string;
   worker_name: string;
   project_id: string;
+  project_name?: string;
   status: 'present' | 'absent';
   units_worked: number;
 }

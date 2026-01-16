@@ -243,6 +243,7 @@ function AttendanceHistory({ workerId }: { workerId: string }) {
                                 attendanceData.map((record) => (
                                     <TableRow key={record.id}>
                                         <TableCell>{formatDate(record.date)}</TableCell>
+                                        <TableCell>{record.project_name}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (

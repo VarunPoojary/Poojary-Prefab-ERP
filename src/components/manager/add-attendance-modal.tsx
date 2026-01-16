@@ -19,9 +19,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, doc } from 'firebase/firestore';
-import type { Worker } from '@/types/schema';
+import type { Worker, Project } from '@/types/schema';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
@@ -51,6 +51,9 @@ function AttendanceForm({ projectId, onSubmitted }: { projectId: string, onSubmi
   const { user } = useUser();
   const { toast } = useToast();
 
+  const projectRef = useMemoFirebase(() => doc(firestore, 'projects', projectId), [firestore, projectId]);
+  const { data: project, isLoading: projectLoading } = useDoc<Project>(projectRef);
+
   const workersQuery = useMemoFirebase(() => query(collection(firestore, 'workers')), [firestore]);
   const { data: workers, isLoading: workersLoading } = useCollection<Worker>(workersQuery);
   
@@ -73,6 +76,11 @@ function AttendanceForm({ projectId, onSubmitted }: { projectId: string, onSubmi
       return;
     }
     
+    if (!project) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Project details not found. Cannot save attendance.' });
+      return;
+    }
+
     const attendanceQuery = query(
         collection(firestore, 'attendance'),
         where('project_id', '==', projectId),
@@ -99,6 +107,7 @@ function AttendanceForm({ projectId, onSubmitted }: { projectId: string, onSubmi
         const docRef = doc(attendanceCollection);
         batch.set(docRef, {
           project_id: projectId,
+          project_name: project.name,
           worker_id: workerId,
           worker_name: workerName || 'Unknown Worker',
           date: data.date,
@@ -132,6 +141,8 @@ function AttendanceForm({ projectId, onSubmitted }: { projectId: string, onSubmi
         worker.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [workers, searchTerm]);
+
+  const isSubmitting = form.formState.isSubmitting || projectLoading;
 
   return (
      <Form {...form}>
@@ -206,8 +217,8 @@ function AttendanceForm({ projectId, onSubmitted }: { projectId: string, onSubmi
               </div>
           </div>
           <DialogFooter className="sm:justify-end pb-4 sm:pb-0">
-              <Button type="submit" disabled={form.formState.isSubmitting} className="w-full sm:w-auto">
-              {form.formState.isSubmitting ? 'Saving...' : 'Save Attendance'}
+              <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+              {isSubmitting ? 'Saving...' : 'Save Attendance'}
               </Button>
           </DialogFooter>
         </form>
