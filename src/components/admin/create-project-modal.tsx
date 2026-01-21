@@ -81,6 +81,7 @@ export function CreateProjectModal() {
       await addDoc(projectsCollection, {
         ...data,
         status: 'active', // Default status as per new schema
+        utilised_budget: 0,
       });
       toast({
         title: 'Project Created',

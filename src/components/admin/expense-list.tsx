@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, onSnapshot, collectionGroup, where, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, collectionGroup, where, doc, updateDoc, runTransaction, increment } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Transaction, Project } from '@/types/schema';
 import {
@@ -86,17 +86,42 @@ export function ExpenseList() {
   }, [transactions, projectFilter, statusFilter]);
 
   const handleUpdateStatus = async (transaction: Transaction, status: 'approved' | 'rejected') => {
-    if (!transaction.project_id) {
+    if (!firestore || !transaction.project_id) {
         toast({ variant: 'destructive', title: 'Error', description: 'Transaction project ID is missing.' });
         return;
     }
     const transactionRef = doc(firestore, `projects/${transaction.project_id}/transactions`, transaction.id);
-    try {
-        await updateDoc(transactionRef, { status });
-        toast({ title: 'Success', description: `Transaction has been ${status}.` });
-    } catch(e) {
-        console.error("Error updating status: ", e);
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update transaction status.' });
+    const projectRef = doc(firestore, 'projects', transaction.project_id);
+
+    if (status === 'approved') {
+        // Use a transaction to ensure atomicity
+        try {
+            await runTransaction(firestore, async (t) => {
+                // First, ensure the transaction is still 'unapproved' to avoid double processing.
+                const txDoc = await t.get(transactionRef);
+                if (txDoc.data()?.status !== 'unapproved') {
+                    throw new Error('This transaction has already been processed.');
+                }
+
+                // Update the transaction status to 'approved'
+                t.update(transactionRef, { status: 'approved' });
+
+                // Atomically increment the project's utilised_budget
+                t.update(projectRef, { utilised_budget: increment(transaction.amount) });
+            });
+            toast({ title: 'Success', description: 'Transaction approved and budget updated.' });
+        } catch (e: any) {
+             console.error("Error approving transaction: ", e);
+             toast({ variant: 'destructive', title: 'Error', description: e.message || 'Failed to approve transaction.' });
+        }
+    } else { // For 'rejected' status
+        try {
+            await updateDoc(transactionRef, { status });
+            toast({ title: 'Success', description: `Transaction has been ${status}.` });
+        } catch(e) {
+            console.error("Error updating status: ", e);
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to update transaction status.' });
+        }
     }
   };
 

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -73,6 +74,7 @@ export function ProjectList() {
               <TableHead>Project Name</TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Budget</TableHead>
+              <TableHead>Utilised Budget</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Assigned Manager</TableHead>
               </TableRow>
@@ -83,6 +85,7 @@ export function ProjectList() {
                   <TableCell className="font-medium">{project.name}</TableCell>
                   <TableCell>{project.location}</TableCell>
                   <TableCell>₹{project.budget_limit.toLocaleString()}</TableCell>
+                  <TableCell>₹{(project.utilised_budget || 0).toLocaleString()}</TableCell>
                   <TableCell>
                       <Badge variant={project.status === 'active' ? 'default' : 'secondary'}>{project.status}</Badge>
                   </TableCell>
@@ -111,6 +114,10 @@ export function ProjectList() {
                      <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Budget</span>
                         <span className="font-medium">₹{project.budget_limit.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Utilised</span>
+                        <span className="font-medium">₹{(project.utilised_budget || 0).toLocaleString()}</span>
                     </div>
                      <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Manager</span>
