@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useMemo } from 'react';
@@ -23,6 +24,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { AddIncomeModal } from '@/components/admin/add-income-modal';
 
 function ProjectHeader({ project }: { project: Project | null }) {
     if (!project) {
@@ -68,9 +70,15 @@ function ManagerName({ managerId }: { managerId: string }) {
 function ProjectDetailsCard({ project }: { project: Project }) {
     const budgetLimit = project.budget_limit || 0;
     const utilisedBudget = project.utilised_budget || 0;
+    const receivedAmount = project.received_amount || 0;
+    const orderValue = project.order_value || 0;
+    
     const remainingBudget = budgetLimit - utilisedBudget;
     const utilisationPercentage = budgetLimit > 0 ? (utilisedBudget / budgetLimit) * 100 : 0;
     const isOverBudget = utilisedBudget > budgetLimit;
+
+    const receivedPercentage = orderValue > 0 ? (receivedAmount / orderValue) * 100 : 0;
+    const pendingAmount = orderValue - receivedAmount;
 
     const getStatusVariant = (status: Project['status']) => {
         return status === 'active' ? 'default' : 'secondary';
@@ -99,7 +107,11 @@ function ProjectDetailsCard({ project }: { project: Project }) {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                     <div className="space-y-1">
                         <p className="text-muted-foreground">Order Value</p>
-                        <p className="font-semibold text-lg">₹{project.order_value.toLocaleString()}</p>
+                        <p className="font-semibold text-lg">₹{orderValue.toLocaleString()}</p>
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-muted-foreground">Amount Received</p>
+                        <p className="font-semibold text-lg">₹{receivedAmount.toLocaleString()}</p>
                     </div>
                     <div className="space-y-1">
                         <p className="text-muted-foreground">Budget Limit</p>
@@ -127,6 +139,22 @@ function ProjectDetailsCard({ project }: { project: Project }) {
                             <span>Project is over budget by ₹{Math.abs(remainingBudget).toLocaleString()}</span>
                          </div>
                      )}
+                </div>
+
+                <div>
+                     <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm text-muted-foreground">Payment Received</span>
+                         <span className="text-sm font-medium">
+                            ₹{receivedAmount.toLocaleString()} / ₹{orderValue.toLocaleString()}
+                        </span>
+                    </div>
+                     <Progress value={receivedPercentage} className="h-2" />
+                     <div className="flex justify-between items-center mt-2 text-sm">
+                        <span className="text-muted-foreground">Pending</span>
+                        <span className="font-semibold">
+                            ₹{pendingAmount.toLocaleString()}
+                        </span>
+                     </div>
                 </div>
 
             </CardContent>
@@ -405,12 +433,15 @@ export default function ProjectDetailsPage({ params }: { params: { projectId: st
 
     return (
         <div className="flex flex-col gap-6">
-            <div className="flex items-center gap-4">
-                <Button variant="outline" size="icon" onClick={() => router.back()}>
-                    <ArrowLeft className="h-4 w-4" />
-                    <span className="sr-only">Back</span>
-                </Button>
-                <ProjectHeader project={project} />
+            <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                     <Button variant="outline" size="icon" onClick={() => router.back()}>
+                        <ArrowLeft className="h-4 w-4" />
+                        <span className="sr-only">Back</span>
+                    </Button>
+                    <ProjectHeader project={project} />
+                </div>
+                <AddIncomeModal projectId={projectId} />
             </div>
            
            <ProjectDetailsCard project={project} />
@@ -419,4 +450,6 @@ export default function ProjectDetailsPage({ params }: { params: { projectId: st
         </div>
     );
 }
+
+
 

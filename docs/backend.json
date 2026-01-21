@@ -65,6 +65,10 @@
           "type": "number",
           "description": "The order value for the project."
         },
+        "received_amount": {
+          "type": "number",
+          "description": "The total amount received for the project."
+        },
         "utilised_budget": {
           "type": "number",
           "description": "The total utilised budget for the project."
@@ -446,5 +450,3 @@
     ]
   }
 }
-
-    

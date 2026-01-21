@@ -17,6 +17,7 @@ export interface Project {
   assigned_manager_id: string;
   status: 'active' | 'completed';
   utilised_budget?: number;
+  received_amount?: number;
 }
 
 export interface Worker {

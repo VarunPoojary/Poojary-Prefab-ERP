@@ -89,8 +89,8 @@ service cloud.firestore {
       // Admins can read all transactions. Managers can read transactions for their projects.
       allow read: if isAdmin() || (isManager() && isAssignedManager(projectId));
       
-      // Managers can create transactions for their projects.
-      allow create: if isManager() && isAssignedManager(projectId);
+      // Admins and assigned managers can create transactions for their projects.
+      allow create: if isAdmin() || (isManager() && isAssignedManager(projectId));
       
       // Only admins can delete transactions. Managers cannot update approved transactions.
       allow update: if isAdmin();

@@ -74,6 +74,7 @@ export function ProjectList() {
               <TableHead>Project Name</TableHead>
               <TableHead>Location</TableHead>
               <TableHead>Order Value</TableHead>
+              <TableHead>Received Amount</TableHead>
               <TableHead>Budget</TableHead>
               <TableHead>Utilised Budget</TableHead>
               <TableHead>Status</TableHead>
@@ -86,6 +87,7 @@ export function ProjectList() {
                   <TableCell className="font-medium">{project.name}</TableCell>
                   <TableCell>{project.location}</TableCell>
                   <TableCell>₹{project.order_value.toLocaleString()}</TableCell>
+                  <TableCell>₹{(project.received_amount || 0).toLocaleString()}</TableCell>
                   <TableCell>₹{project.budget_limit.toLocaleString()}</TableCell>
                   <TableCell>₹{(project.utilised_budget || 0).toLocaleString()}</TableCell>
                   <TableCell>
@@ -116,6 +118,10 @@ export function ProjectList() {
                      <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Order Value</span>
                         <span className="font-medium">₹{project.order_value.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Received</span>
+                        <span className="font-medium">₹{(project.received_amount || 0).toLocaleString()}</span>
                     </div>
                      <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Budget</span>

@@ -87,6 +87,7 @@ export function CreateProjectModal() {
         ...data,
         status: 'active',
         utilised_budget: 0,
+        received_amount: 0,
       });
       toast({
         title: 'Project Created',
