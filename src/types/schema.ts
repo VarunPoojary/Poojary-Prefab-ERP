@@ -13,6 +13,7 @@ export interface Project {
   name:string;
   location: string;
   budget_limit: number;
+  order_value: number;
   assigned_manager_id: string;
   status: 'active' | 'completed';
   utilised_budget?: number;

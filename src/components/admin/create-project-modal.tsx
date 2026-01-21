@@ -36,6 +36,10 @@ const projectSchema = z.object({
     (a) => parseFloat(z.string().parse(a)),
     z.number().positive('Budget must be a positive number')
   ),
+  order_value: z.preprocess(
+    (a) => parseFloat(z.string().parse(a)),
+    z.number().positive('Order value must be a positive number')
+  ),
   assigned_manager_id: z.string().min(1, 'Please select a manager'),
 });
 
@@ -63,6 +67,7 @@ export function CreateProjectModal() {
       name: '',
       location: '',
       budget_limit: 0,
+      order_value: 0,
       assigned_manager_id: '',
     },
   });
@@ -80,7 +85,7 @@ export function CreateProjectModal() {
       const projectsCollection = collection(firestore, 'projects');
       await addDoc(projectsCollection, {
         ...data,
-        status: 'active', // Default status as per new schema
+        status: 'active',
         utilised_budget: 0,
       });
       toast({
@@ -139,6 +144,17 @@ export function CreateProjectModal() {
               {errors.location && <p className="col-span-4 text-destructive text-sm text-right">{errors.location.message}</p>}
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="order_value" className="text-right">
+                Order Value
+              </Label>
+              <Controller
+                name="order_value"
+                control={control}
+                render={({ field }) => <Input id="order_value" type="number" placeholder="₹0" {...field} className="col-span-3" />}
+              />
+              {errors.order_value && <p className="col-span-4 text-destructive text-sm text-right">{errors.order_value.message}</p>}
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="budget_limit" className="text-right">
                 Budget
               </Label>
@@ -182,3 +198,5 @@ export function CreateProjectModal() {
     </Dialog>
   );
 }
+
+    

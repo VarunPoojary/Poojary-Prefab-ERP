@@ -61,6 +61,10 @@
           "type": "number",
           "description": "The budget limit for the project."
         },
+        "order_value": {
+          "type": "number",
+          "description": "The order value for the project."
+        },
         "utilised_budget": {
           "type": "number",
           "description": "The total utilised budget for the project."
@@ -80,6 +84,7 @@
         "name",
         "location",
         "budget_limit",
+        "order_value",
         "assigned_manager_id",
         "status"
       ]
