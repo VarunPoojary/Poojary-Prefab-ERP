@@ -43,7 +43,7 @@ export function ProjectList() {
   } = useCollection<Project>(projectsQuery);
 
   const handleRowClick = (projectId: string) => {
-    router.push(`/admin/projects/${projectId}`);
+    router.push(`/projects/${projectId}`);
   };
 
   if (isLoading) {
@@ -136,5 +136,3 @@ export function ProjectList() {
     </>
   );
 }
-
-    
